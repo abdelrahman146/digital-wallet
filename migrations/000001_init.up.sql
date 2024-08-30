@@ -45,17 +45,17 @@ CREATE TABLE transactions
     created_at       timestamp with time zone  DEFAULT NOW(),       -- created_at is the time when the transaction is created
     version          bigint           NOT NULL DEFAULT 0,           -- version is the version of the wallet after this transaction
     PRIMARY KEY (id, created_at),                                   -- primary key is the combination of id and created_at
-    CHECK ( previous_balance + amount = new_balance ),              -- check if the balance is correct
-    CHECK (
+    CONSTRAINT chk_balance_correct CHECK ( previous_balance + amount = new_balance ),              -- check if the balance is correct
+    CONSTRAINT chk_amount_correct CHECK (
         (amount >= 0 AND type IN ('DEPOSIT', 'REFUND', 'TRANSFER_IN')) OR
         (amount <= 0 AND type IN ('WITHDRAW', 'PURCHASE', 'TRANSFER_OUT'))
         ),                                                          -- check if the amount is correct
-    CHECK ( type = 'TRANSFER_IN' AND reference_type = 'TRANSACTION' AND reference_id IS NOT NULL),
-    CHECK ( type = 'PURCHASE' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
-    CHECK ( type = 'REFUND' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
-    CHECK ( type = 'WITHDRAW' AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL),
-    CHECK ( type = 'DEPOSIT' AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NULL),
-    CHECK ( type = 'TRANSFER_OUT' AND reference_type IS NULL AND reference_id IS NULL)
+    CONSTRAINT chk_transfer_in_correct CHECK ( type = 'TRANSFER_IN' AND reference_type = 'TRANSACTION' AND reference_id IS NOT NULL),
+    CONSTRAINT chk_transfer_out_correct CHECK ( type = 'TRANSFER_OUT' AND reference_type IS NULL AND reference_id IS NULL),
+    CONSTRAINT chk_purchase_correct CHECK ( type = 'PURCHASE' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
+    CONSTRAINT chk_refund_correct CHECK ( type = 'REFUND' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
+    CONSTRAINT chk_withdraw_correct CHECK ( type = 'WITHDRAW' AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL),
+    CONSTRAINT chk_deposit_correct CHECK ( type = 'DEPOSIT' AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NULL)
 ) PARTITION BY RANGE (created_at);
 
 CREATE INDEX transactions_wallet_id_idx ON transactions (wallet_id);
@@ -64,3 +64,15 @@ CREATE INDEX transactions_created_at_idx ON transactions (created_at);
 -- Q4 2024: October 1st to December 31st + half of 3rd quarter
 CREATE TABLE transactions_2024_q4 PARTITION OF transactions
     FOR VALUES FROM ('2024-07-01 00:00:00+00') TO ('2025-01-01 00:00:00+00');
+-- Q1 2025: January 1st to March 31st
+CREATE TABLE transactions_2025_q1 PARTITION OF transactions
+    FOR VALUES FROM ('2025-01-01 00:00:00+00') TO ('2025-04-01 00:00:00+00');
+-- Q2 2025: April 1st to June 30th
+CREATE TABLE transactions_2025_q2 PARTITION OF transactions
+    FOR VALUES FROM ('2025-04-01 00:00:00+00') TO ('2025-07-01 00:00:00+00');
+-- Q3 2025: July 1st to September 30th
+CREATE TABLE transactions_2025_q3 PARTITION OF transactions
+    FOR VALUES FROM ('2025-07-01 00:00:00+00') TO ('2025-10-01 00:00:00+00');
+-- Q4 2025: October 1st to December 31st
+CREATE TABLE transactions_2025_q4 PARTITION OF transactions
+    FOR VALUES FROM ('2025-10-01 00:00:00+00') TO ('2026-01-01 00:00:00+00');
