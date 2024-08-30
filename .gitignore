@@ -91,6 +91,7 @@ Temporary Items
 # build binaries
 build/
 dist/
+bin/
 
 # docker compose
 data/
