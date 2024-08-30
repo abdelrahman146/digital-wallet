@@ -1,3 +1,13 @@
+-- function to set updated_at when the row is updated
+CREATE OR REPLACE FUNCTION set_updated_at()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE wallet
 (
     id         uuid PRIMARY KEY                  DEFAULT uuid_generate_v4(),
@@ -7,6 +17,13 @@ CREATE TABLE wallet
     created_at timestamp with time zone NOT NULL DEFAULT now(),                   -- created_at is the time when the wallet is created
     updated_at timestamp with time zone NOT NULL DEFAULT now()                    -- updated_at is the time when the wallet is updated
 );
+
+-- Update updated_at when wallet is updated
+CREATE TRIGGER set_wallet_updated_at
+    BEFORE UPDATE
+    ON wallet
+    FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
 
 CREATE INDEX balances_owner_id_idx ON wallet (user_id);
 
