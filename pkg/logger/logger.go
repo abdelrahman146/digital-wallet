@@ -1,6 +1,9 @@
 package logger
 
-import "sync"
+import (
+	"go.uber.org/zap/zapcore"
+	"sync"
+)
 
 type F struct {
 	Key   string
@@ -20,13 +23,20 @@ var (
 	once   sync.Once
 )
 
-func InitLogger(l Logger) {
+func initLogger(l Logger) {
 	once.Do(func() {
 		logger = l
 	})
 }
 
 func GetLogger() Logger {
+	if logger == nil {
+		zap, err := newZapLogger(zapcore.DebugLevel, "digital-wallet")
+		if err != nil {
+			panic(err)
+		}
+		initLogger(zap)
+	}
 	return logger
 }
 
