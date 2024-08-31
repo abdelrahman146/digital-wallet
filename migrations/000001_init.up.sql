@@ -29,7 +29,7 @@ CREATE INDEX balances_owner_id_idx ON wallet (user_id);
 
 CREATE TYPE transaction_type AS ENUM ('DEPOSIT', 'WITHDRAW', 'PURCHASE', 'REFUND', 'TRANSFER_IN', 'TRANSFER_OUT');
 CREATE TYPE initiator_type AS ENUM ('SYSTEM', 'USER', 'BACKOFFICE');
-CREATE TYPE reference_type AS ENUM ('ORDER', 'BANK_TRANSACTION', 'TRANSACTION');
+CREATE TYPE reference_type AS ENUM ('ORDER', 'BANK_TRANSACTION', 'TRANSFER');
 
 CREATE TABLE transactions
 (
@@ -50,7 +50,7 @@ CREATE TABLE transactions
         (amount >= 0 AND type IN ('DEPOSIT', 'REFUND', 'TRANSFER_IN')) OR
         (amount <= 0 AND type IN ('WITHDRAW', 'PURCHASE', 'TRANSFER_OUT'))
         ),                                                                            -- check if the amount is correct
-    CONSTRAINT chk_transfer_in_correct CHECK ( type = 'TRANSFER_IN' AND reference_type = 'TRANSACTION' AND
+    CONSTRAINT chk_transfer_in_correct CHECK ( type = 'TRANSFER_IN' AND reference_type = 'TRANSFER' AND
                                                reference_id IS NOT NULL),
     CONSTRAINT chk_transfer_out_correct CHECK ( type = 'TRANSFER_OUT' AND reference_type IS NULL AND reference_id IS NULL),
     CONSTRAINT chk_purchase_correct CHECK ( type = 'PURCHASE' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
@@ -58,7 +58,7 @@ CREATE TABLE transactions
     CONSTRAINT chk_withdraw_correct CHECK ( type = 'WITHDRAW' AND reference_type = 'BANK_TRANSACTION' AND
                                             reference_id IS NOT NULL),
     CONSTRAINT chk_deposit_correct CHECK ( type = 'DEPOSIT' AND reference_type = 'BANK_TRANSACTION' AND
-                                           reference_id IS NULL)
+                                           reference_id IS NOT NULL)
 ) PARTITION BY RANGE (created_at);
 
 CREATE INDEX transactions_wallet_id_idx ON transactions (wallet_id);

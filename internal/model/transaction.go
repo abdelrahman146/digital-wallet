@@ -1,5 +1,26 @@
 package model
 
+var (
+	TransactionTypeDeposit     = "DEPOSIT"
+	TransactionTypeWithdraw    = "WITHDRAW"
+	TransactionTypeRefund      = "REFUND"
+	TransactionTypePurchase    = "PURCHASE"
+	TransactionTypeTransferIn  = "TRANSFER_IN"
+	TransactionTypeTransferOut = "TRANSFER_OUT"
+)
+
+var (
+	TransactionReferenceTypeBankTransaction = "BANK_TRANSACTION"
+	TransactionReferenceTypeOrder           = "ORDER"
+	TransactionReferenceTypeTransfer        = "TRANSFER"
+)
+
+var (
+	TransactionInitiatedBySystem     = "SYSTEM"
+	TransactionInitiatedByBackoffice = "BACKOFFICE"
+	TransactionInitiatedByUser       = "USER"
+)
+
 type Transaction struct {
 	ID              string  `gorm:"column:id" json:"id"`
 	WalletID        string  `gorm:"column:wallet_id" json:"walletId"`

@@ -67,7 +67,7 @@ func (r *transactionRepo) Create(transaction *model.Transaction, walletVersion i
 		transaction.NewBalance = wallet.Balance
 		transaction.Version = wallet.Version
 
-		if err := tx.Save(transaction).Error; err != nil {
+		if err := tx.Create(transaction).Error; err != nil {
 			return err
 		}
 
@@ -110,11 +110,11 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 		toWallet.Version++
 		to.NewBalance = toWallet.Balance
 
-		if err := tx.Save(from).Error; err != nil {
+		if err := tx.Create(from).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Save(to).Error; err != nil {
+		if err := tx.Create(to).Error; err != nil {
 			return err
 		}
 
