@@ -15,6 +15,10 @@ func main() {
 	app.Get("/ping", func(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusOK).JSON(api.NewSuccessResponse("pong"))
 	})
+	app.Get("/panic", func(c *fiber.Ctx) error {
+		logger.GetLogger().Panic("This panic is caught by fiber")
+		return nil
+	})
 	err := app.Listen(":3401")
 	if err != nil {
 		logger.GetLogger().Panic("failed to start server", logger.Field("error", err))
