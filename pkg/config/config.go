@@ -17,14 +17,14 @@ type Config struct {
 
 var config *Config
 
-func getConfig() *Config {
+func GetConfig() *Config {
 	if config == nil {
-		config = LoadConfig()
+		config = loadConfig()
 	}
 	return config
 }
 
-func LoadConfig() *Config {
+func loadConfig() *Config {
 	return &Config{
 		DbHost:     GetEnv("DB_HOST", "localhost"),
 		DbPort:     GetEnv("DB_PORT", "5432"),

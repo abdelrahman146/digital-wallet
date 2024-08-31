@@ -24,7 +24,7 @@ func NewConflictError(text string, err error) CustomError {
 	return CustomError{
 		s:        text,
 		Code:     "CONFLICT",
-		Desc:     "Uncompleted request due to a conflict with the current state of the target resource.",
+		Desc:     "Uncompleted request due to a conflict with the current state of the target resources.",
 		HttpCode: 409,
 		Original: err,
 	}
@@ -34,7 +34,7 @@ func NewUnauthorizedError(text string, err error) CustomError {
 	return CustomError{
 		s:        text,
 		Code:     "UNAUTHORIZED",
-		Desc:     "Authentication required for the target resource.",
+		Desc:     "Authentication required for the target resources.",
 		HttpCode: 401,
 		Original: err,
 	}
@@ -64,7 +64,7 @@ func NewPaymentRequiredError(text string, err error) CustomError {
 	return CustomError{
 		s:        text,
 		Code:     "PAYMENT_REQUIRED",
-		Desc:     "Payment required for the target resource.",
+		Desc:     "Payment required for the target resources.",
 		HttpCode: 402,
 		Original: err,
 	}
@@ -73,7 +73,7 @@ func NewMethodNotAllowedError(text string, err error) CustomError {
 	return CustomError{
 		s:        text,
 		Code:     "METHOD_NOT_ALLOWED",
-		Desc:     "Request method not supported for the target resource.",
+		Desc:     "Request method not supported for the target resources.",
 		HttpCode: 405,
 		Original: err,
 	}
@@ -83,7 +83,7 @@ func NewNotAcceptableError(text string, err error) CustomError {
 	return CustomError{
 		s:        text,
 		Code:     "NOT_ACCEPTABLE",
-		Desc:     "Request not acceptable for the target resource.",
+		Desc:     "Request not acceptable for the target resources.",
 		HttpCode: 406,
 		Original: err,
 	}
