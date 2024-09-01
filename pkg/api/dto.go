@@ -9,6 +9,7 @@ type List[T any] struct {
 
 type ErrorResponseBody struct {
 	Message  string            `json:"message"`
+	Desc     string            `json:"desc"`
 	HttpCode int               `json:"httpCode"`
 	Code     string            `json:"code"`
 	Reason   string            `json:"reason,omitempty"`

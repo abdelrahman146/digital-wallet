@@ -25,6 +25,9 @@ func (h *walletHandler) Setup(appGroup fiber.Router) {
 	group.Post("/", h.CreateWallet)
 	group.Get("/sum", h.GetWalletsSum)
 	group.Get("/user/:userId", h.GetWalletByUserID)
+	group.Get("/user/:userId/transactions", h.GetWalletTransactionsByUserID)
+	group.Get("/:walletId", h.GetWalletByID)
+	group.Get("/:walletId/transactions", h.GetWalletTransactionsByID)
 }
 
 func (h *walletHandler) GetWallets(c *fiber.Ctx) error {
@@ -45,6 +48,15 @@ func (h *walletHandler) GetWalletsSum(c *fiber.Ctx) error {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(sum))
+}
+
+func (h *walletHandler) GetWalletByID(c *fiber.Ctx) error {
+	id := c.Params("walletId")
+	wallet, err := h.services.Wallet.GetWalletByID(id)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(wallet))
 }
 
 func (h *walletHandler) GetWalletByUserID(c *fiber.Ctx) error {
@@ -77,4 +89,38 @@ func (h *walletHandler) CreateWallet(c *fiber.Ctx) error {
 		return err
 	}
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(wallet))
+}
+
+func (h *walletHandler) GetWalletTransactionsByID(c *fiber.Ctx) error {
+	id := c.Params("walletId")
+	page, limit, err := api.GetPageAndLimit(c)
+	if err != nil {
+		return err
+	}
+	_, err = h.services.Wallet.GetWalletByID(id)
+	if err != nil {
+		return err
+	}
+	transactions, err := h.services.Transaction.GetTransactionsByWalletID(id, page, limit)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
+}
+
+func (h *walletHandler) GetWalletTransactionsByUserID(c *fiber.Ctx) error {
+	id := c.Params("userId")
+	page, limit, err := api.GetPageAndLimit(c)
+	if err != nil {
+		return err
+	}
+	wallet, err := h.services.Wallet.GetWalletByUserID(id)
+	if err != nil {
+		return err
+	}
+	transactions, err := h.services.Transaction.GetTransactionsByWalletID(wallet.ID, page, limit)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
 }

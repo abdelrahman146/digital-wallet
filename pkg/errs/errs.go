@@ -1,7 +1,7 @@
 package errs
 
 type CustomError struct {
-	s        string
+	Message  string
 	Desc     string            `json:"desc"`
 	Code     string            `json:"code"`
 	HttpCode int               `json:"httpCode"`
@@ -10,5 +10,5 @@ type CustomError struct {
 }
 
 func (e CustomError) Error() string {
-	return e.s
+	return e.Message
 }

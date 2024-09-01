@@ -68,10 +68,12 @@ func main() {
 
 	// Define handlers
 	handler.NewV1WalletHandler(v1, services)
+	handler.NewV1TransactionsHandler(v1, services)
+	handler.NewV1MainHandler(app, services)
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {
-		return errs.NewNotFoundError("The requested resource was not found", nil)
+		return errs.NewNotFoundError("Route not found", nil)
 	})
 
 	// Signal handling for graceful shutdown

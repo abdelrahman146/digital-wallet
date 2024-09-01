@@ -8,6 +8,7 @@ import (
 type WalletRepo interface {
 	CreateWallet(wallet *model.Wallet) error
 	GetWalletByUserID(userId string) (*model.Wallet, error)
+	GetWalletByID(walletId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) ([]model.Wallet, error)
 	GetTotalWallets() (int64, error)
 	GetWalletsSum() (float64, error)
@@ -28,6 +29,15 @@ func (r *walletRepo) CreateWallet(wallet *model.Wallet) error {
 func (r *walletRepo) GetWalletByUserID(userId string) (*model.Wallet, error) {
 	var wallet model.Wallet
 	err := r.db.Where("user_id = ?", userId).First(&wallet).Error
+	if err != nil {
+		return nil, err
+	}
+	return &wallet, nil
+}
+
+func (r *walletRepo) GetWalletByID(walletId string) (*model.Wallet, error) {
+	var wallet model.Wallet
+	err := r.db.Where("id = ?", walletId).First(&wallet).Error
 	if err != nil {
 		return nil, err
 	}

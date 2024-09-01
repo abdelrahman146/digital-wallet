@@ -9,6 +9,7 @@ import (
 type WalletService interface {
 	CreateWallet(userId string) (*model.Wallet, error)
 	GetWalletByUserID(userId string) (*model.Wallet, error)
+	GetWalletByID(walletId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) (*api.List[model.Wallet], error)
 	GetWalletsSum() (float64, error)
 }
@@ -34,6 +35,14 @@ func (s *walletService) CreateWallet(userId string) (*model.Wallet, error) {
 
 func (s *walletService) GetWalletByUserID(userId string) (*model.Wallet, error) {
 	wallet, err := s.repos.Wallet.GetWalletByUserID(userId)
+	if err != nil {
+		return nil, err
+	}
+	return wallet, nil
+}
+
+func (s *walletService) GetWalletByID(walletId string) (*model.Wallet, error) {
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if err != nil {
 		return nil, err
 	}

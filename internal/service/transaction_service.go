@@ -9,11 +9,11 @@ import (
 )
 
 type TransactionService interface {
-	Deposit(req *DepositRequest) (*model.Transaction, error)
-	Withdraw(req *WithdrawRequest) (*model.Transaction, error)
-	Refund(req *RefundRequest) (*model.Transaction, error)
-	Purchase(req *PurchaseRequest) (*model.Transaction, error)
-	Transfer(req *TransferRequest) (*model.Transaction, error)
+	Deposit(req *DepositRequest, initiatedBy string) (*model.Transaction, error)
+	Withdraw(req *WithdrawRequest, initiatedBy string) (*model.Transaction, error)
+	Refund(req *RefundRequest, initiatedBy string) (*model.Transaction, error)
+	Purchase(req *PurchaseRequest, initiatedBy string) (*model.Transaction, error)
+	Transfer(req *TransferRequest, initiatedBy string) (*model.Transaction, error)
 	GetTransactionsByWalletID(walletId string, page int, limit int) (*api.List[model.Transaction], error)
 	GetTransactionsSumByWalletID(walletId string) (float64, error)
 	GetTransactionsSum() (float64, error)
@@ -27,7 +27,7 @@ func NewTransactionService(repos *repository.Repos) TransactionService {
 	return &transactionService{repos: repos}
 }
 
-func (s *transactionService) Deposit(req *DepositRequest) (*model.Transaction, error) {
+func (s *transactionService) Deposit(req *DepositRequest, initiatedBy string) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid deposit request", fields)
@@ -42,7 +42,7 @@ func (s *transactionService) Deposit(req *DepositRequest) (*model.Transaction, e
 		Type:          model.TransactionTypeDeposit,
 		ReferenceID:   &req.BankTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
-		InitiatedBy:   req.InitiatedBy,
+		InitiatedBy:   initiatedBy,
 	}
 	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to deposit", err)
@@ -50,7 +50,7 @@ func (s *transactionService) Deposit(req *DepositRequest) (*model.Transaction, e
 	return transaction, nil
 }
 
-func (s *transactionService) Withdraw(req *WithdrawRequest) (*model.Transaction, error) {
+func (s *transactionService) Withdraw(req *WithdrawRequest, initiatedBy string) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid withdraw request", fields)
@@ -65,7 +65,7 @@ func (s *transactionService) Withdraw(req *WithdrawRequest) (*model.Transaction,
 		Type:          model.TransactionTypeWithdraw,
 		ReferenceID:   &req.BankTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
-		InitiatedBy:   req.InitiatedBy,
+		InitiatedBy:   initiatedBy,
 	}
 	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to withdraw", err)
@@ -73,7 +73,7 @@ func (s *transactionService) Withdraw(req *WithdrawRequest) (*model.Transaction,
 	return transaction, nil
 }
 
-func (s *transactionService) Refund(req *RefundRequest) (*model.Transaction, error) {
+func (s *transactionService) Refund(req *RefundRequest, initiatedBy string) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid refund request", fields)
@@ -88,7 +88,7 @@ func (s *transactionService) Refund(req *RefundRequest) (*model.Transaction, err
 		Type:          model.TransactionTypeRefund,
 		ReferenceID:   &req.OrderId,
 		ReferenceType: &model.TransactionReferenceTypeOrder,
-		InitiatedBy:   req.InitiatedBy,
+		InitiatedBy:   initiatedBy,
 	}
 	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to refund", err)
@@ -96,7 +96,7 @@ func (s *transactionService) Refund(req *RefundRequest) (*model.Transaction, err
 	return transaction, nil
 }
 
-func (s *transactionService) Purchase(req *PurchaseRequest) (*model.Transaction, error) {
+func (s *transactionService) Purchase(req *PurchaseRequest, initiatedBy string) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid purchase request", fields)
@@ -111,7 +111,7 @@ func (s *transactionService) Purchase(req *PurchaseRequest) (*model.Transaction,
 		Type:          model.TransactionTypePurchase,
 		ReferenceID:   &req.OrderId,
 		ReferenceType: &model.TransactionReferenceTypeOrder,
-		InitiatedBy:   req.InitiatedBy,
+		InitiatedBy:   initiatedBy,
 	}
 	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to purchase", err)
@@ -119,7 +119,7 @@ func (s *transactionService) Purchase(req *PurchaseRequest) (*model.Transaction,
 	return transaction, nil
 }
 
-func (s *transactionService) Transfer(req *TransferRequest) (*model.Transaction, error) {
+func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid transfer request", fields)
@@ -136,14 +136,14 @@ func (s *transactionService) Transfer(req *TransferRequest) (*model.Transaction,
 		WalletID:    fromWallet.ID,
 		Amount:      -req.Amount,
 		Type:        model.TransactionTypeTransferOut,
-		InitiatedBy: req.InitiatedBy,
+		InitiatedBy: initiatedBy,
 	}
 	transactionIn := &model.Transaction{
 		WalletID:      toWallet.ID,
 		Amount:        req.Amount,
 		Type:          model.TransactionTypeTransferIn,
 		ReferenceType: &model.TransactionReferenceTypeTransfer,
-		InitiatedBy:   req.InitiatedBy,
+		InitiatedBy:   initiatedBy,
 	}
 	if err = s.repos.Transaction.Transfer(transactionOut, fromWallet.Version, transactionIn, toWallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to transfer", err)
@@ -160,7 +160,7 @@ func (s *transactionService) GetTransactionsByWalletID(walletId string, page int
 	if err != nil {
 		return nil, errs.NewInternalError("failed to get total transactions", err)
 	}
-	return &api.List[model.Transaction]{Items: transactions, Total: total}, nil
+	return &api.List[model.Transaction]{Items: transactions, Page: page, Limit: limit, Total: total}, nil
 }
 
 func (s *transactionService) GetTransactionsSumByWalletID(walletId string) (float64, error) {

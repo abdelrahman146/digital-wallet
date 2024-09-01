@@ -2,7 +2,7 @@ package errs
 
 func NewValidationError(text string, fields map[string]string) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "VALIDATION_ERROR",
 		Desc:     "Could not understand the request due to invalid syntax.",
 		HttpCode: 400,
@@ -12,7 +12,7 @@ func NewValidationError(text string, fields map[string]string) CustomError {
 
 func NewNotFoundError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "NOT_FOUND",
 		Desc:     "Resource could not be found",
 		HttpCode: 404,
@@ -22,7 +22,7 @@ func NewNotFoundError(text string, err error) CustomError {
 
 func NewConflictError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "CONFLICT",
 		Desc:     "Uncompleted request due to a conflict with the current state of the target resources.",
 		HttpCode: 409,
@@ -32,7 +32,7 @@ func NewConflictError(text string, err error) CustomError {
 
 func NewUnauthorizedError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "UNAUTHORIZED",
 		Desc:     "Authentication required for the target resources.",
 		HttpCode: 401,
@@ -42,7 +42,7 @@ func NewUnauthorizedError(text string, err error) CustomError {
 
 func NewForbiddenError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "FORBIDDEN",
 		Desc:     "Request understood, but refused",
 		HttpCode: 403,
@@ -52,7 +52,7 @@ func NewForbiddenError(text string, err error) CustomError {
 
 func NewBadRequestError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "BAD_REQUEST",
 		Desc:     "Could not understand the request due to invalid syntax.",
 		HttpCode: 400,
@@ -62,7 +62,7 @@ func NewBadRequestError(text string, err error) CustomError {
 
 func NewPaymentRequiredError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "PAYMENT_REQUIRED",
 		Desc:     "Payment required for the target resources.",
 		HttpCode: 402,
@@ -71,7 +71,7 @@ func NewPaymentRequiredError(text string, err error) CustomError {
 }
 func NewMethodNotAllowedError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "METHOD_NOT_ALLOWED",
 		Desc:     "Request method not supported for the target resources.",
 		HttpCode: 405,
@@ -81,7 +81,7 @@ func NewMethodNotAllowedError(text string, err error) CustomError {
 
 func NewNotAcceptableError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "NOT_ACCEPTABLE",
 		Desc:     "Request not acceptable for the target resources.",
 		HttpCode: 406,
@@ -90,7 +90,7 @@ func NewNotAcceptableError(text string, err error) CustomError {
 }
 func NewTimeoutError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "TIMEOUT",
 		Desc:     "Request timeout",
 		HttpCode: 408,
@@ -100,7 +100,7 @@ func NewTimeoutError(text string, err error) CustomError {
 
 func NewPayloadTooLargeError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "PAYLOAD_TOO_LARGE",
 		Desc:     "Request payload too large",
 		HttpCode: 413,
@@ -110,7 +110,7 @@ func NewPayloadTooLargeError(text string, err error) CustomError {
 
 func NewUnsupportedMediaTypeError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "UNSUPPORTED_MEDIA_TYPE",
 		Desc:     "Unsupported media type",
 		HttpCode: 415,
@@ -120,7 +120,7 @@ func NewUnsupportedMediaTypeError(text string, err error) CustomError {
 
 func NewExpectationFailedError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "EXPECTATION_FAILED",
 		Desc:     "Expectation failed",
 		HttpCode: 417,
@@ -130,7 +130,7 @@ func NewExpectationFailedError(text string, err error) CustomError {
 
 func NewTooManyRequestsError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "TOO_MANY_REQUESTS",
 		Desc:     "Too many requests",
 		HttpCode: 429,
@@ -140,7 +140,7 @@ func NewTooManyRequestsError(text string, err error) CustomError {
 
 func NewUnprocessableEntityError(text string, err error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Code:     "Well formed request, but was unable to be followed due to semantic errors.",
 		Desc:     "Unprocessable entity",
 		HttpCode: 422,
@@ -150,7 +150,7 @@ func NewUnprocessableEntityError(text string, err error) CustomError {
 
 func NewInternalError(text string, e error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Desc:     "Encountered an unexpected condition that prevented it from fulfilling the request.",
 		Code:     "INTERNAL_ERROR",
 		HttpCode: 500,
@@ -159,7 +159,7 @@ func NewInternalError(text string, e error) CustomError {
 }
 func NewNotImplementedError(text string, e error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Desc:     "The server does not support the functionality required to fulfill the request.",
 		Code:     "NOT_IMPLEMENTED",
 		HttpCode: 501,
@@ -169,7 +169,7 @@ func NewNotImplementedError(text string, e error) CustomError {
 
 func NewServiceUnavailableError(text string, e error) CustomError {
 	return CustomError{
-		s:        text,
+		Message:  text,
 		Desc:     "The server is currently unavailable.",
 		Code:     "SERVICE_UNAVAILABLE",
 		HttpCode: 503,
@@ -179,7 +179,7 @@ func NewServiceUnavailableError(text string, e error) CustomError {
 
 func NewUnknownError(e error) CustomError {
 	return CustomError{
-		s:        "Unhandled Error",
+		Message:  "Unhandled Error",
 		Desc:     "An unknown error occurred.",
 		Code:     "UNKNOWN_ERROR",
 		HttpCode: 520,

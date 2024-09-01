@@ -12,33 +12,33 @@ func HandleError(err error) CustomError {
 		return err.(CustomError)
 	// Map gorm errors
 	case errors.Is(err, gorm.ErrRecordNotFound):
-		return NewNotFoundError("Record not found", err)
+		return NewNotFoundError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrCheckConstraintViolated):
-		return NewConflictError("Check constraint violated", err)
+		return NewConflictError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrInvalidTransaction):
-		return NewConflictError("Invalid transaction", err)
+		return NewConflictError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrUnsupportedRelation):
-		return NewBadRequestError("Unsupported relation", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrPrimaryKeyRequired):
-		return NewBadRequestError("Primary key required", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrModelValueRequired):
-		return NewBadRequestError("Model value required", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrInvalidData):
-		return NewBadRequestError("Invalid data", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrRegistered):
-		return NewBadRequestError("Registered", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrInvalidField):
-		return NewBadRequestError("Invalid field", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrInvalidValue):
-		return NewBadRequestError("Invalid value", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrInvalidValueOfLength):
-		return NewBadRequestError("Invalid value of length", err)
+		return NewBadRequestError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrPreloadNotAllowed):
-		return NewInternalError("Preload not allowed", err)
+		return NewInternalError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrDuplicatedKey):
-		return NewConflictError("Duplicated key", err)
+		return NewConflictError(err.Error(), nil)
 	case errors.Is(err, gorm.ErrForeignKeyViolated):
-		return NewConflictError("Foreign key violated", err)
+		return NewConflictError(err.Error(), nil)
 	// default
 	default:
 		return NewUnknownError(err)

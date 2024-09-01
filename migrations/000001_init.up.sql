@@ -46,19 +46,14 @@ CREATE TABLE transactions
     version          bigint           NOT NULL DEFAULT 0,                             -- version is the version of the wallet after this transaction
     PRIMARY KEY (id, created_at),                                                     -- primary key is the combination of id and created_at
     CONSTRAINT chk_balance_correct CHECK ( previous_balance + amount = new_balance ), -- check if the balance is correct
-    CONSTRAINT chk_amount_correct CHECK (
-        (amount >= 0 AND type IN ('DEPOSIT', 'REFUND', 'TRANSFER_IN')) OR
-        (amount <= 0 AND type IN ('WITHDRAW', 'PURCHASE', 'TRANSFER_OUT'))
-        ),                                                                            -- check if the amount is correct
-    CONSTRAINT chk_transfer_in_correct CHECK ( type = 'TRANSFER_IN' AND reference_type = 'TRANSFER' AND
-                                               reference_id IS NOT NULL),
-    CONSTRAINT chk_transfer_out_correct CHECK ( type = 'TRANSFER_OUT' AND reference_type IS NULL AND reference_id IS NULL),
-    CONSTRAINT chk_purchase_correct CHECK ( type = 'PURCHASE' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
-    CONSTRAINT chk_refund_correct CHECK ( type = 'REFUND' AND reference_type = 'ORDER' AND reference_id IS NOT NULL),
-    CONSTRAINT chk_withdraw_correct CHECK ( type = 'WITHDRAW' AND reference_type = 'BANK_TRANSACTION' AND
-                                            reference_id IS NOT NULL),
-    CONSTRAINT chk_deposit_correct CHECK ( type = 'DEPOSIT' AND reference_type = 'BANK_TRANSACTION' AND
-                                           reference_id IS NOT NULL)
+    CONSTRAINT chk_transaction_correct CHECK (
+        (type = 'DEPOSIT' AND amount >= 0 AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL) OR
+        (type = 'WITHDRAW' AND amount <= 0 AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL) OR
+        (type = 'PURCHASE' AND amount <= 0 AND reference_type = 'ORDER' AND reference_id IS NOT NULL) OR
+        (type = 'REFUND' AND amount >= 0 AND reference_type = 'ORDER' AND reference_id IS NOT NULL) OR
+        (type = 'TRANSFER_IN' AND amount >= 0 AND reference_type = 'TRANSFER' AND reference_id IS NOT NULL) OR
+        (type = 'TRANSFER_OUT' AND amount <= 0 AND reference_type IS NULL AND reference_id IS NULL)
+        )
 ) PARTITION BY RANGE (created_at);
 
 CREATE INDEX transactions_wallet_id_idx ON transactions (wallet_id);
