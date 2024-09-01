@@ -18,12 +18,16 @@ run:
 
 create-migration:
 	@echo "creating migration..."
-	@migrate create -ext sql -dir migrations -seq $(name)
+	@migrate create -ext sql -dir db/migrations -seq $(name)
 
 migrate-up:
 	@echo "migrating up..."
-	@migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
+	@migrate -path db/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
 migrate-down:
 	@echo "migrating down..."
-	@migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" down
+	@migrate -path db/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" down
+
+seed:
+	@echo "seeding data..."
+	@go run db/seed.go

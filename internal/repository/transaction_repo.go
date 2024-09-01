@@ -24,6 +24,17 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 	return &transactionRepo{db: db}
 }
 
+//func getRandomDate() time.Time {
+//	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+//	endDate := time.Date(2024, 8, 30, 0, 0, 0, 0, time.UTC)
+//	// Calculate the duration between the start and end dates
+//	duration := endDate.Sub(startDate)
+//	// Generate a random duration within the range
+//	randomDuration := time.Duration(rand.Int63n(int64(duration)))
+//	// Add the random duration to the start date
+//	return startDate.Add(randomDuration)
+//}
+
 func (r *transactionRepo) GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
 	err := r.db.Where("wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
@@ -61,6 +72,7 @@ func (r *transactionRepo) Create(transaction *model.Transaction, walletVersion i
 			return errors.New("insufficient balance")
 		}
 
+		//transaction.CreatedAt = getRandomDate()
 		transaction.PreviousBalance = wallet.Balance
 		wallet.Balance = wallet.Balance + transaction.Amount
 		wallet.Version++
@@ -100,11 +112,14 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 			return errors.New("insufficient balance")
 		}
 
+		//createdAt := getRandomDate()
+		//from.CreatedAt = createdAt
 		from.PreviousBalance = fromWallet.Balance
 		fromWallet.Balance = fromWallet.Balance + from.Amount
 		fromWallet.Version++
 		from.NewBalance = fromWallet.Balance
 
+		//to.CreatedAt = createdAt
 		to.PreviousBalance = toWallet.Balance
 		toWallet.Balance = toWallet.Balance + to.Amount
 		toWallet.Version++

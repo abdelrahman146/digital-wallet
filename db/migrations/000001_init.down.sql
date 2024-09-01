@@ -11,4 +11,4 @@ DROP TYPE IF EXISTS reference_type;
 
 DROP INDEX IF EXISTS balances_owner_id_idx;
 
-DROP TABLE IF EXISTS wallet;
+DROP TABLE IF EXISTS wallets;

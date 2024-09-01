@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Wallet struct {
 	ID        string    `gorm:"column:id;primaryKey;default:uuid_generate_v4()" json:"id"`
