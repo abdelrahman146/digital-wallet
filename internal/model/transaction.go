@@ -12,7 +12,7 @@ var (
 )
 
 var (
-	TransactionReferenceTypeBankTransaction = "BANK_TRANSACTION"
+	TransactionReferenceTypeBankTransaction = "PAYMENT_TRANSACTION"
 	TransactionReferenceTypeOrder           = "ORDER"
 	TransactionReferenceTypeTransfer        = "TRANSFER"
 )

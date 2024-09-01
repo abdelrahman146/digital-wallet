@@ -1,15 +1,15 @@
 package service
 
 type DepositRequest struct {
-	UserID            string  `json:"userId,omitempty" validate:"required"`
-	Amount            float64 `json:"amount,omitempty" validate:"required,numeric,gt=0"`
-	BankTransactionId string  `json:"bankTransactionId,omitempty" validate:"required"`
+	UserID               string  `json:"userId,omitempty" validate:"required"`
+	Amount               float64 `json:"amount,omitempty" validate:"required,numeric,gt=0"`
+	PaymentTransactionId string  `json:"paymentTransactionId,omitempty" validate:"required"`
 }
 
 type WithdrawRequest struct {
-	UserID            string  `json:"userId,omitempty" validate:"required"`
-	Amount            float64 `json:"amount,omitempty" validate:"required,numeric,lt=0"`
-	BankTransactionId string  `json:"bankTransactionId,omitempty" validate:"required"`
+	UserID               string  `json:"userId,omitempty" validate:"required"`
+	Amount               float64 `json:"amount,omitempty" validate:"required,numeric,lt=0"`
+	PaymentTransactionId string  `json:"paymentTransactionId,omitempty" validate:"required"`
 }
 
 type RefundRequest struct {

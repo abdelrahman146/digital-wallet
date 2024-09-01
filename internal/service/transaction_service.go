@@ -40,7 +40,7 @@ func (s *transactionService) Deposit(req *DepositRequest, initiatedBy string) (*
 		WalletID:      wallet.ID,
 		Amount:        req.Amount,
 		Type:          model.TransactionTypeDeposit,
-		ReferenceID:   &req.BankTransactionId,
+		ReferenceID:   &req.PaymentTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
 		InitiatedBy:   initiatedBy,
 	}
@@ -63,7 +63,7 @@ func (s *transactionService) Withdraw(req *WithdrawRequest, initiatedBy string) 
 		WalletID:      wallet.ID,
 		Amount:        req.Amount,
 		Type:          model.TransactionTypeWithdraw,
-		ReferenceID:   &req.BankTransactionId,
+		ReferenceID:   &req.PaymentTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
 		InitiatedBy:   initiatedBy,
 	}

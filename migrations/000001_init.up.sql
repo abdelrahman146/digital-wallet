@@ -8,7 +8,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE wallet
+CREATE TYPE transaction_type AS ENUM ('DEPOSIT', 'WITHDRAW', 'PURCHASE', 'REFUND', 'TRANSFER_IN', 'TRANSFER_OUT');
+CREATE TYPE initiator_type AS ENUM ('SYSTEM', 'USER', 'BACKOFFICE');
+CREATE TYPE reference_type AS ENUM ('ORDER', 'PAYMENT_TRANSACTION', 'POINTS', 'TRANSFER');
+
+CREATE TABLE wallets
 (
     id         uuid PRIMARY KEY                  DEFAULT uuid_generate_v4(),
     user_id    text UNIQUE              NOT NULL,                                  -- user_id is the owner of the wallet
@@ -21,20 +25,15 @@ CREATE TABLE wallet
 -- Update updated_at when wallet is updated
 CREATE TRIGGER set_wallet_updated_at
     BEFORE UPDATE
-    ON wallet
+    ON wallets
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
-CREATE INDEX balances_owner_id_idx ON wallet (user_id);
-
-CREATE TYPE transaction_type AS ENUM ('DEPOSIT', 'WITHDRAW', 'PURCHASE', 'REFUND', 'TRANSFER_IN', 'TRANSFER_OUT');
-CREATE TYPE initiator_type AS ENUM ('SYSTEM', 'USER', 'BACKOFFICE');
-CREATE TYPE reference_type AS ENUM ('ORDER', 'BANK_TRANSACTION', 'TRANSFER');
 
 CREATE TABLE transactions
 (
     id               uuid                      DEFAULT uuid_generate_v4(),
-    wallet_id        uuid REFERENCES wallet (id),                                     -- wallet_id is the owner of the transaction
+    wallet_id        uuid REFERENCES wallets (id),                                     -- wallet_id is the owner of the transaction
     type             transaction_type NOT NULL,                                       -- type is the type of the transaction
     amount           numeric(18, 2)   NOT NULL,                                       -- amount is the amount of the transaction
     reference_id     text,                                                            -- reference_id is the reference of the transaction (e.g. order_id, bank_transaction_id, transaction_id)
@@ -47,8 +46,8 @@ CREATE TABLE transactions
     PRIMARY KEY (id, created_at),                                                     -- primary key is the combination of id and created_at
     CONSTRAINT chk_balance_correct CHECK ( previous_balance + amount = new_balance ), -- check if the balance is correct
     CONSTRAINT chk_transaction_correct CHECK (
-        (type = 'DEPOSIT' AND amount >= 0 AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL) OR
-        (type = 'WITHDRAW' AND amount <= 0 AND reference_type = 'BANK_TRANSACTION' AND reference_id IS NOT NULL) OR
+        (type = 'DEPOSIT' AND amount >= 0 AND reference_type = 'PAYMENT_TRANSACTION' AND reference_id IS NOT NULL) OR
+        (type = 'WITHDRAW' AND amount <= 0 AND reference_type = 'PAYMENT_TRANSACTION' AND reference_id IS NOT NULL) OR
         (type = 'PURCHASE' AND amount <= 0 AND reference_type = 'ORDER' AND reference_id IS NOT NULL) OR
         (type = 'REFUND' AND amount >= 0 AND reference_type = 'ORDER' AND reference_id IS NOT NULL) OR
         (type = 'TRANSFER_IN' AND amount >= 0 AND reference_type = 'TRANSFER' AND reference_id IS NOT NULL) OR
