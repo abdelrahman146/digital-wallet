@@ -78,3 +78,7 @@ func (zl *zapLogger) Panic(msg string, fields ...F) {
 	}
 	zl.logger.Panic(msg, zapFields...)
 }
+
+func (zl *zapLogger) AddField(key, value string) {
+	zl.logger = zl.logger.With(zap.String(key, value))
+}

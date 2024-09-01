@@ -6,17 +6,17 @@ import (
 )
 
 type walletHandler struct {
-	services service.Services
+	services *service.Services
 }
 
-func NewV1WalletHandler(appGroup *fiber.Group, services service.Services) {
+func NewV1WalletHandler(appGroup fiber.Router, services *service.Services) {
 	handler := &walletHandler{
 		services: services,
 	}
 	handler.Setup(appGroup)
 }
 
-func (h *walletHandler) Setup(appGroup *fiber.Group) {
+func (h *walletHandler) Setup(appGroup fiber.Router) {
 	appGroup.Get("/ping")
 }
 

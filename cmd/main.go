@@ -1,27 +1,85 @@
 package main
 
 import (
-	"digital-wallet/pkg/api"
+	"digital-wallet/internal/handler"
+	"digital-wallet/internal/repository"
+	"digital-wallet/internal/service"
 	"digital-wallet/pkg/logger"
+	"digital-wallet/pkg/resources"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/healthcheck"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/idempotency"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
+	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"net/http"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	//db := resources.InitDB()
+	// Initialize the database connection
+	db := resources.InitDB()
+
+	// Create a new Fiber app
 	app := fiber.New()
+
+	// Middleware setup
 	app.Use(recover.New())
-	app.Get("/ping", func(ctx *fiber.Ctx) error {
-		return ctx.Status(http.StatusOK).JSON(api.NewSuccessResponse("pong"))
-	})
-	app.Get("/panic", func(c *fiber.Ctx) error {
-		logger.GetLogger().Panic("This panic is caught by fiber")
-		return nil
-	})
-	err := app.Listen(":3401")
-	if err != nil {
-		logger.GetLogger().Panic("failed to start server", logger.Field("error", err))
+	app.Use(healthcheck.New())
+	app.Use(helmet.New())
+	app.Use(idempotency.New())
+	app.Use(limiter.New(limiter.Config{
+		Max:        10,
+		Expiration: 10 * time.Second,
+	}))
+	app.Use(requestid.New())
+	app.Get("/metrics", monitor.New())
+	app.Use(fiberLogger.New(fiberLogger.Config{
+		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
+	}))
+
+	// Define repositories
+	repos := &repository.Repos{
+		Wallet:      repository.NewWalletRepo(db),
+		Transaction: repository.NewTransactionRepo(db),
 	}
-	// TODO CLOSE CONNECTIONS
+
+	// Define services
+	services := &service.Services{
+		Wallet:      service.NewWalletService(repos),
+		Transaction: service.NewTransactionService(repos),
+	}
+
+	// Define versioned routes
+	v1 := app.Group("/v1")
+
+	// Define handlers
+	handler.NewV1WalletHandler(v1, services)
+
+	// Signal handling for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start the server in a goroutine
+	go func() {
+		if err := app.Listen(":3401"); err != nil {
+			logger.GetLogger().Panic("failed to start server", logger.Field("error", err))
+		}
+	}()
+
+	// Wait for interrupt signal
+	<-quit
+
+	// Gracefully shutdown the server and close the database connection
+	logger.GetLogger().Info("Shutting down server...")
+	if err := app.Shutdown(); err != nil {
+		logger.GetLogger().Error("Error shutting down server", logger.Field("error", err))
+	}
+	resources.CloseDB(db)
+	logger.GetLogger().Info("Database connection closed")
 }

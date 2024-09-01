@@ -16,6 +16,7 @@ type Logger interface {
 	Warn(msg string, fields ...F)
 	Error(msg string, fields ...F)
 	Panic(msg string, fields ...F)
+	AddField(key, value string)
 }
 
 var (
