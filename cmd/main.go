@@ -4,6 +4,8 @@ import (
 	"digital-wallet/internal/handler"
 	"digital-wallet/internal/repository"
 	"digital-wallet/internal/service"
+	"digital-wallet/pkg/api"
+	"digital-wallet/pkg/errs"
 	"digital-wallet/pkg/logger"
 	"digital-wallet/pkg/resources"
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +28,13 @@ func main() {
 	db := resources.InitDB()
 
 	// Create a new Fiber app
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			logger.GetLogger().Info("error handler", logger.Field("error", err))
+			status, resp := api.NewErrorResponse(err)
+			return ctx.Status(status).JSON(resp)
+		},
+	})
 
 	// Middleware setup
 	app.Use(recover.New())
@@ -60,6 +68,11 @@ func main() {
 
 	// Define handlers
 	handler.NewV1WalletHandler(v1, services)
+
+	// Undefined route handler
+	app.Use(func(c *fiber.Ctx) error {
+		return errs.NewNotFoundError("The requested resource was not found", nil)
+	})
 
 	// Signal handling for graceful shutdown
 	quit := make(chan os.Signal, 1)

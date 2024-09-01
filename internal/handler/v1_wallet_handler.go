@@ -17,9 +17,15 @@ func NewV1WalletHandler(appGroup fiber.Router, services *service.Services) {
 }
 
 func (h *walletHandler) Setup(appGroup fiber.Router) {
-	appGroup.Get("/ping")
+	group := appGroup.Group("/wallet")
+	group.Get("/:userId", h.GetWalletByID)
 }
 
-func (h *walletHandler) Ping(ctx *fiber.Ctx) error {
-	return ctx.Status(fiber.StatusOK).JSON("pong")
+func (h *walletHandler) GetWalletByID(c *fiber.Ctx) error {
+	id := c.Params("userId")
+	wallet, err := h.services.Wallet.GetWalletByUserID(id)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(wallet)
 }

@@ -5,14 +5,20 @@ import "digital-wallet/pkg/errs"
 func NewErrorResponse(err error) (httpCode int, resp ErrorResponse) {
 	customErr := errs.HandleError(err)
 	httpCode = customErr.HttpCode
+	body := ErrorResponseBody{
+		Message:  customErr.Desc,
+		HttpCode: customErr.HttpCode,
+		Code:     customErr.Code,
+	}
+	if customErr.Original != nil {
+		body.Reason = customErr.Original.Error()
+	}
+	if customErr.Fields != nil {
+		body.Fields = customErr.Fields
+	}
 	resp = ErrorResponse{
 		Success: false,
-		Error: ErrorResponseBody{
-			Message:  customErr.Desc,
-			HttpCode: customErr.HttpCode,
-			Code:     customErr.Code,
-			Reason:   customErr.Original.Error(),
-		},
+		Error:   body,
 	}
 	return httpCode, resp
 }

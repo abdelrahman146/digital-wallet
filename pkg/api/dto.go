@@ -8,10 +8,11 @@ type List[T any] struct {
 }
 
 type ErrorResponseBody struct {
-	Message  string `json:"message"`
-	HttpCode int    `json:"httpCode"`
-	Code     string `json:"code"`
-	Reason   string `json:"reason"`
+	Message  string            `json:"message"`
+	HttpCode int               `json:"httpCode"`
+	Code     string            `json:"code"`
+	Reason   string            `json:"reason,omitempty"`
+	Fields   map[string]string `json:"fields,omitempty"`
 }
 
 type ErrorResponse struct {
