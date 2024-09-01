@@ -139,10 +139,11 @@ func (s *transactionService) Transfer(req *TransferRequest) (*model.Transaction,
 		InitiatedBy: req.InitiatedBy,
 	}
 	transactionIn := &model.Transaction{
-		WalletID:    toWallet.ID,
-		Amount:      req.Amount,
-		Type:        model.TransactionTypeTransferIn,
-		InitiatedBy: req.InitiatedBy,
+		WalletID:      toWallet.ID,
+		Amount:        req.Amount,
+		Type:          model.TransactionTypeTransferIn,
+		ReferenceType: &model.TransactionReferenceTypeTransfer,
+		InitiatedBy:   req.InitiatedBy,
 	}
 	if err = s.repos.Transaction.Transfer(transactionOut, fromWallet.Version, transactionIn, toWallet.Version); err != nil {
 		return nil, errs.NewBadRequestError("failed to transfer", err)

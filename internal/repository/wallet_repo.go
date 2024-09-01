@@ -7,7 +7,7 @@ import (
 
 type WalletRepo interface {
 	CreateWallet(wallet *model.Wallet) error
-	GetWalletByUserID(userID string) (*model.Wallet, error)
+	GetWalletByUserID(userId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) ([]model.Wallet, error)
 	GetTotalWallets() (int64, error)
 	GetWalletsSum() (float64, error)
@@ -25,9 +25,9 @@ func (r *walletRepo) CreateWallet(wallet *model.Wallet) error {
 	return r.db.Create(wallet).Error
 }
 
-func (r *walletRepo) GetWalletByUserID(userID string) (*model.Wallet, error) {
+func (r *walletRepo) GetWalletByUserID(userId string) (*model.Wallet, error) {
 	var wallet model.Wallet
-	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
+	err := r.db.Where("user_id = ?", userId).First(&wallet).Error
 	if err != nil {
 		return nil, err
 	}

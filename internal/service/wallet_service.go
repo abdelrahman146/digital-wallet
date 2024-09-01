@@ -7,9 +7,9 @@ import (
 )
 
 type WalletService interface {
-	CreateWallet(userID string) (*model.Wallet, error)
-	GetWalletByUserID(userID string) (*model.Wallet, error)
-	GetWallets(page int, limit int) (*api.List[model.Wallet], int64, error)
+	CreateWallet(userId string) (*model.Wallet, error)
+	GetWalletByUserID(userId string) (*model.Wallet, error)
+	GetWallets(page int, limit int) (*api.List[model.Wallet], error)
 	GetWalletsSum() (float64, error)
 }
 
@@ -21,9 +21,9 @@ func NewWalletService(repos *repository.Repos) WalletService {
 	return &walletService{repos: repos}
 }
 
-func (s *walletService) CreateWallet(userID string) (*model.Wallet, error) {
+func (s *walletService) CreateWallet(userId string) (*model.Wallet, error) {
 	wallet := &model.Wallet{
-		UserID: userID,
+		UserID: userId,
 	}
 	err := s.repos.Wallet.CreateWallet(wallet)
 	if err != nil {
@@ -32,8 +32,8 @@ func (s *walletService) CreateWallet(userID string) (*model.Wallet, error) {
 	return wallet, nil
 }
 
-func (s *walletService) GetWalletByUserID(userID string) (*model.Wallet, error) {
-	wallet, err := s.repos.Wallet.GetWalletByUserID(userID)
+func (s *walletService) GetWalletByUserID(userId string) (*model.Wallet, error) {
+	wallet, err := s.repos.Wallet.GetWalletByUserID(userId)
 	if err != nil {
 		return nil, err
 	}
@@ -48,14 +48,14 @@ func (s *walletService) GetWalletsSum() (float64, error) {
 	return sum, nil
 }
 
-func (s *walletService) GetWallets(page int, limit int) (*api.List[model.Wallet], int64, error) {
+func (s *walletService) GetWallets(page int, limit int) (*api.List[model.Wallet], error) {
 	wallets, err := s.repos.Wallet.GetWallets(page, limit)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	total, err := s.repos.Wallet.GetTotalWallets()
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return &api.List[model.Wallet]{Items: wallets, Page: page, Limit: limit, Total: total}, total, nil
+	return &api.List[model.Wallet]{Items: wallets, Page: page, Limit: limit, Total: total}, nil
 }

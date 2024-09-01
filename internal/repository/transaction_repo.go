@@ -8,11 +8,11 @@ import (
 )
 
 type TransactionRepo interface {
-	GetTransactionsByWalletID(walletID string, page int, limit int) ([]model.Transaction, error)
-	GetTotalTransactionsByWalletID(walletID string) (int64, error)
+	GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error)
+	GetTotalTransactionsByWalletID(walletId string) (int64, error)
 	Create(transaction *model.Transaction, walletVersion int64) error
 	Transfer(from *model.Transaction, fromWalletVersion int64, to *model.Transaction, toWalletVersion int64) error
-	GetTransactionsSumByWalletID(walletID string) (float64, error)
+	GetTransactionsSumByWalletID(walletId string) (float64, error)
 	GetTransactionsSum() (float64, error)
 }
 
@@ -24,18 +24,18 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 	return &transactionRepo{db: db}
 }
 
-func (r *transactionRepo) GetTransactionsByWalletID(walletID string, page int, limit int) ([]model.Transaction, error) {
+func (r *transactionRepo) GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("wallet_id = ?", walletID).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	err := r.db.Where("wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}
 	return transactions, nil
 }
 
-func (r *transactionRepo) GetTotalTransactionsByWalletID(walletID string) (int64, error) {
+func (r *transactionRepo) GetTotalTransactionsByWalletID(walletId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletID).Count(&total).Error
+	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
 		return 0, err
 	}
@@ -114,6 +114,7 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 			return err
 		}
 
+		to.ReferenceID = &from.ID
 		if err := tx.Create(to).Error; err != nil {
 			return err
 		}
@@ -126,9 +127,9 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 	})
 }
 
-func (r *transactionRepo) GetTransactionsSumByWalletID(walletID string) (float64, error) {
+func (r *transactionRepo) GetTransactionsSumByWalletID(walletId string) (float64, error) {
 	var sum float64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("wallet_id = ?", walletID).Scan(&sum).Error
+	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("wallet_id = ?", walletId).Scan(&sum).Error
 	if err != nil {
 		return 0, err
 	}

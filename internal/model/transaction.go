@@ -22,7 +22,7 @@ var (
 )
 
 type Transaction struct {
-	ID              string  `gorm:"column:id" json:"id"`
+	ID              string  `gorm:"column:id;primaryKey;default:uuid_generate_v4()" json:"id"`
 	WalletID        string  `gorm:"column:wallet_id" json:"walletId"`
 	Amount          float64 `gorm:"column:amount" json:"amount"`
 	Type            string  `gorm:"column:type" json:"type"`
