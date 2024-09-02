@@ -2,7 +2,10 @@ package repository
 
 import (
 	"digital-wallet/internal/model"
-	"errors"
+	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
+	"fmt"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,21 +27,11 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 	return &transactionRepo{db: db}
 }
 
-//func getRandomDate() time.Time {
-//	startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
-//	endDate := time.Date(2024, 8, 30, 0, 0, 0, 0, time.UTC)
-//	// Calculate the duration between the start and end dates
-//	duration := endDate.Sub(startDate)
-//	// Generate a random duration within the range
-//	randomDuration := time.Duration(rand.Int63n(int64(duration)))
-//	// Add the random duration to the start date
-//	return startDate.Add(randomDuration)
-//}
-
 func (r *transactionRepo) GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	err := r.db.Where("wallet_id = ?", walletId).Order("version desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
+		logger.GetLogger().Error("Error while fetching transactions by wallet id", logger.Field("error", err))
 		return nil, err
 	}
 	return transactions, nil
@@ -48,6 +41,7 @@ func (r *transactionRepo) GetTotalTransactionsByWalletID(walletId string) (int64
 	var total int64
 	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
+		logger.GetLogger().Error("Error while fetching total transactions by wallet id", logger.Field("error", err))
 		return 0, err
 	}
 	return total, nil
@@ -59,31 +53,37 @@ func (r *transactionRepo) Create(transaction *model.Transaction, walletVersion i
 
 		// Lock the wallet
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.WalletID).First(&wallet).Error; err != nil {
+			logger.GetLogger().Error("Error while fetching wallet by id", logger.Field("error", err))
 			return err
 		}
 
 		// optimistic locking
 		if wallet.Version != walletVersion {
-			return errors.New("wallet has been modified by another transaction")
+			return errs.NewConflictError(fmt.Sprintf("wallet %s has been modified by another transaction", wallet.ID), nil)
 		}
 
 		// check if wallet has sufficient balance
-		if wallet.Balance+transaction.Amount < 0 {
-			return errors.New("insufficient balance")
+		if wallet.Balance.Add(transaction.Amount).LessThan(decimal.NewFromFloat(0)) {
+			return errs.NewNotAcceptableError("insufficient balance", nil)
 		}
 
-		//transaction.CreatedAt = getRandomDate()
 		transaction.PreviousBalance = wallet.Balance
-		wallet.Balance = wallet.Balance + transaction.Amount
+		wallet.Balance = wallet.Balance.Add(transaction.Amount)
 		wallet.Version++
 		transaction.NewBalance = wallet.Balance
 		transaction.Version = wallet.Version
 
 		if err := tx.Create(transaction).Error; err != nil {
+			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err
 		}
 
-		return tx.Save(&wallet).Error
+		if err := tx.Save(&wallet).Error; err != nil {
+			logger.GetLogger().Error("Error while saving wallet", logger.Field("error", err))
+			return err
+		}
+
+		return nil
 	})
 }
 
@@ -101,27 +101,24 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 
 		// optimistic locking
 		if fromWallet.Version != fromWalletVersion {
-			return errors.New("from wallet has been modified by another transaction")
+			return errs.NewConflictError(fmt.Sprintf("sender wallet %s has been modified by another transaction", fromWallet.ID), nil)
 		}
 		if toWallet.Version != toWalletVersion {
-			return errors.New("to wallet has been modified by another transaction")
+			return errs.NewConflictError(fmt.Sprintf("receiver wallet %s has been modified by another transaction", toWallet.ID), nil)
 		}
 
 		// check if from wallet has sufficient balance
-		if fromWallet.Balance+from.Amount < 0 {
-			return errors.New("insufficient balance")
+		if fromWallet.Balance.Add(from.Amount).LessThan(decimal.NewFromFloat(0)) {
+			return errs.NewNotAcceptableError("insufficient balance", nil)
 		}
 
-		//createdAt := getRandomDate()
-		//from.CreatedAt = createdAt
 		from.PreviousBalance = fromWallet.Balance
-		fromWallet.Balance = fromWallet.Balance + from.Amount
+		fromWallet.Balance = fromWallet.Balance.Add(from.Amount)
 		fromWallet.Version++
 		from.NewBalance = fromWallet.Balance
 
-		//to.CreatedAt = createdAt
 		to.PreviousBalance = toWallet.Balance
-		toWallet.Balance = toWallet.Balance + to.Amount
+		toWallet.Balance = toWallet.Balance.Add(to.Amount)
 		toWallet.Version++
 		to.NewBalance = toWallet.Balance
 
@@ -131,14 +128,20 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 
 		to.ReferenceID = &from.ID
 		if err := tx.Create(to).Error; err != nil {
+			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err
 		}
 
 		if err := tx.Save(&fromWallet).Error; err != nil {
+			logger.GetLogger().Error("Error while saving from wallet", logger.Field("error", err))
 			return err
 		}
 
-		return tx.Save(&toWallet).Error
+		if err := tx.Save(&toWallet).Error; err != nil {
+			logger.GetLogger().Error("Error while saving to wallet", logger.Field("error", err))
+			return err
+		}
+		return nil
 	})
 }
 

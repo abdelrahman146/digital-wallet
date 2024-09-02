@@ -39,8 +39,8 @@ CREATE TABLE transactions
     reference_id     text,                                                            -- reference_id is the reference of the transaction (e.g. order_id, bank_transaction_id, transaction_id)
     reference_type   reference_type,                                                  -- reference_type is the type of the reference (e.g. order, bank_transaction, transaction)
     initiated_by     initiator_type   NOT NULL,                                       -- initiated_by is the initiator of the transaction
-    previous_balance numeric(18, 2)   NOT NULL CHECK (amount >= 0),                   -- previous_balance is the balance before the transaction
-    new_balance      numeric(18, 2)   NOT NULL CHECK (amount >= 0),                   -- new_balance is the balance after the transaction
+    previous_balance numeric(18, 2)   NOT NULL CHECK (previous_balance >= 0),                   -- previous_balance is the balance before the transaction
+    new_balance      numeric(18, 2)   NOT NULL CHECK (new_balance >= 0),                   -- new_balance is the balance after the transaction
     created_at       timestamp with time zone  DEFAULT NOW(),                         -- created_at is the time when the transaction is created
     version          bigint           NOT NULL DEFAULT 0,                             -- version is the version of the wallet after this transaction
     PRIMARY KEY (id, created_at),                                                     -- primary key is the combination of id and created_at

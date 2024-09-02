@@ -134,7 +134,7 @@ func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) 
 	}
 	transactionOut := &model.Transaction{
 		WalletID:    fromWallet.ID,
-		Amount:      -req.Amount,
+		Amount:      req.Amount.Neg(),
 		Type:        model.TransactionTypeTransferOut,
 		InitiatedBy: initiatedBy,
 	}

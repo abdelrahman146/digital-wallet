@@ -30,7 +30,6 @@ func main() {
 	// Create a new Fiber app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			logger.GetLogger().Info("error handler", logger.Field("error", err))
 			status, resp := api.NewErrorResponse(err)
 			return ctx.Status(status).JSON(resp)
 		},

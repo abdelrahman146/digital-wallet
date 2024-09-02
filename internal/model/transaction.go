@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
 
 var (
 	TransactionTypeDeposit     = "DEPOSIT"
@@ -24,17 +27,17 @@ var (
 )
 
 type Transaction struct {
-	ID              string    `gorm:"column:id;primaryKey;default:uuid_generate_v4()" json:"id"`
-	WalletID        string    `gorm:"column:wallet_id" json:"walletId"`
-	Amount          float64   `gorm:"column:amount" json:"amount"`
-	Type            string    `gorm:"column:type" json:"type"`
-	ReferenceID     *string   `gorm:"column:reference_id" json:"referenceId"`
-	ReferenceType   *string   `gorm:"column:reference_type" json:"referenceType"`
-	InitiatedBy     string    `gorm:"column:initiated_by" json:"initiatedBy"`
-	PreviousBalance float64   `gorm:"column:previous_balance" json:"previousBalance"`
-	NewBalance      float64   `gorm:"column:new_balance" json:"newBalance"`
-	Version         int64     `gorm:"column:version" json:"version"`
-	CreatedAt       time.Time `gorm:"column:created_at" json:"createdAt"`
+	ID              string          `gorm:"column:id;primaryKey;default:uuid_generate_v4()" json:"id"`
+	WalletID        string          `gorm:"column:wallet_id" json:"walletId"`
+	Amount          decimal.Decimal `gorm:"column:amount;numeric(18,2)" json:"amount"`
+	Type            string          `gorm:"column:type" json:"type"`
+	ReferenceID     *string         `gorm:"column:reference_id" json:"referenceId"`
+	ReferenceType   *string         `gorm:"column:reference_type" json:"referenceType"`
+	InitiatedBy     string          `gorm:"column:initiated_by" json:"initiatedBy"`
+	PreviousBalance decimal.Decimal `gorm:"column:previous_balance;numeric(18,2)" json:"previousBalance"`
+	NewBalance      decimal.Decimal `gorm:"column:new_balance;numeric(18,2)" json:"newBalance"`
+	Version         int64           `gorm:"column:version" json:"version"`
+	CreatedAt       time.Time       `gorm:"column:created_at" json:"createdAt"`
 }
 
 func (Transaction) TableName() string {
