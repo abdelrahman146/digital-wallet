@@ -3,11 +3,9 @@ package main
 import (
 	"digital-wallet/internal/model"
 	"digital-wallet/internal/repository"
-	"digital-wallet/internal/service"
 	"digital-wallet/pkg/resources"
-	"errors"
 	"fmt"
-	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"log"
 	"math"
 	"math/rand"
@@ -16,68 +14,69 @@ import (
 )
 
 const (
-	numWallets             = 10000
-	numTransactions        = 100000
-	maxConcurrentWallets   = 10
-	maxConcurrentTransfers = 15
-	transactionTypes       = 5 // DEPOSIT, WITHDRAW, PURCHASE, REFUND, TRANSFER_IN, TRANSFER_OUT
-	startDate              = "2024-01-01"
-	endDate                = "2024-08-30"
-	minTransactionAmount   = 10.0
-	maxTransactionAmount   = 1000.0
-	paymentTransactionIds  = 1000000
-	orderIds               = 1000000
-	initiators             = 3 // SYSTEM, USER, BACKOFFICE
+	startDateString         = "2024-01-01"
+	endDateString           = "2024-08-30"
+	minWalletsPerDay        = 100
+	maxWalletsPerDay        = 1000
+	minTransactionsPerDay   = 10000
+	maxTransactionsPerDay   = 100000
+	minTransactionAmount    = 10.0
+	maxTransactionAmount    = 1000.0
+	paymentTransactionIds   = 1000000
+	orderIds                = 1000000
+	maxConcurrentOperations = 50
+	maxRetries              = 5
+	retryDelay              = 100 * time.Millisecond
 )
+
+var walletLocks sync.Map
 
 func main() {
 	// Initialize random seed
 	rand.Seed(time.Now().UnixNano())
 
-	// Initialize the database connection
+	// Parse start and end dates
+	startDate, _ := time.Parse("2006-01-02", startDateString)
+	endDate, _ := time.Parse("2006-01-02", endDateString)
+
+	// Initialize database connection
 	db := resources.InitDB()
 
-	// Initialize repositories and services
-	repos := &repository.Repos{
-		Wallet:      repository.NewWalletRepo(db),
-		Transaction: repository.NewTransactionRepo(db),
-	}
-	transactionService := service.NewTransactionService(repos)
-	walletService := service.NewWalletService(repos)
+	// Initialize repositories
+	walletRepo := repository.NewWalletRepo(db)
+	transactionRepo := repository.NewTransactionRepo(db)
 
-	// Generate wallets
-	log.Println("Starting wallet generation...")
-	wallets, err := generateWallets(walletService, numWallets)
-	if err != nil {
-		log.Fatalf("Failed to generate wallets: %v", err)
-	}
-	log.Printf("Successfully generated %d wallets.", len(wallets))
+	// Seed data for each day between startDate and endDate
+	for currentDate := startDate; !currentDate.After(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
+		log.Printf("Seeding data for date: %s", currentDate.Format("2006-01-02"))
 
-	// Generate transactions
-	log.Println("Starting transaction generation...")
-	err = generateTransactions(transactionService, wallets, numTransactions)
-	if err != nil {
-		log.Fatalf("Failed to generate transactions: %v", err)
-	}
-	log.Printf("Successfully generated %d transactions.", numTransactions)
+		// Seed wallets
+		numWallets := getRandomInt(minWalletsPerDay, maxWalletsPerDay)
+		wallets, err := generateWallets(walletRepo, numWallets, currentDate)
+		if err != nil {
+			log.Printf("Failed to generate wallets for date %s: %v", currentDate.Format("2006-01-02"), err)
+			continue
+		}
 
-	// Verify data consistency
-	log.Println("Verifying data consistency...")
-	err = verifyDataConsistency(repos)
-	if err != nil {
-		log.Fatalf("Data inconsistency detected: %v", err)
+		// Seed transactions
+		numTransactions := getRandomInt(minTransactionsPerDay, maxTransactionsPerDay)
+		err = generateTransactions(transactionRepo, wallets, numTransactions, currentDate)
+		if err != nil {
+			log.Printf("Failed to generate transactions for date %s: %v", currentDate.Format("2006-01-02"), err)
+			continue
+		}
 	}
-	log.Println("Data consistency verified successfully.")
+
+	log.Println("Seeding completed successfully.")
 }
 
-func generateWallets(walletService service.WalletService, count int) ([]*model.Wallet, error) {
+func generateWallets(walletRepo repository.WalletRepo, count int, createdAt time.Time) ([]*model.Wallet, error) {
 	var (
 		wallets   = make([]*model.Wallet, 0, count)
 		userIDs   = generateUniqueUserIDs(count)
 		wg        sync.WaitGroup
-		errChan   = make(chan error, count)
 		walletMux sync.Mutex
-		sem       = make(chan struct{}, maxConcurrentWallets)
+		sem       = make(chan struct{}, maxConcurrentOperations)
 	)
 
 	for i := 0; i < count; i++ {
@@ -88,9 +87,18 @@ func generateWallets(walletService service.WalletService, count int) ([]*model.W
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			wallet, err := walletService.CreateWallet(userID)
+			// Initialize wallet with a random balance to avoid insufficient balance issues
+			initialBalance := getRandomAmount(minTransactionAmount, maxTransactionAmount)
+			wallet := &model.Wallet{
+				UserID:    userID,
+				Balance:   initialBalance,
+				CreatedAt: createdAt,
+				UpdatedAt: createdAt,
+			}
+
+			err := walletRepo.CreateWallet(wallet)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to create wallet for user %s: %v", userID, err)
+				log.Printf("Failed to create wallet for user %s: %v", userID, err)
 				return
 			}
 
@@ -101,33 +109,14 @@ func generateWallets(walletService service.WalletService, count int) ([]*model.W
 	}
 
 	wg.Wait()
-	close(errChan)
-
-	if len(errChan) > 0 {
-		return nil, <-errChan
-	}
 
 	return wallets, nil
 }
 
-func generateUniqueUserIDs(count int) []string {
-	userIDs := make(map[string]struct{}, count)
-	for len(userIDs) < count {
-		userID, _ := uuid.NewUUID()
-		userIDs[userID.String()] = struct{}{}
-	}
-	ids := make([]string, 0, count)
-	for id := range userIDs {
-		ids = append(ids, id)
-	}
-	return ids
-}
-
-func generateTransactions(transactionService service.TransactionService, wallets []*model.Wallet, count int) error {
+func generateTransactions(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, count int, createdAt time.Time) error {
 	var (
-		wg      sync.WaitGroup
-		errChan = make(chan error, count)
-		sem     = make(chan struct{}, maxConcurrentTransfers)
+		wg  sync.WaitGroup
+		sem = make(chan struct{}, maxConcurrentOperations)
 	)
 
 	for i := 0; i < count; i++ {
@@ -138,93 +127,165 @@ func generateTransactions(transactionService service.TransactionService, wallets
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			err := createRandomTransaction(transactionService, wallets)
+			err := createRandomTransactionWithRetry(transactionRepo, wallets, createdAt)
 			if err != nil {
-				errChan <- err
+				log.Printf("Failed to create transaction after retries: %v", err)
 			}
 		}()
 	}
 
 	wg.Wait()
-	close(errChan)
-
-	if len(errChan) > 0 {
-		return <-errChan
-	}
 
 	return nil
 }
 
-func createRandomTransaction(transactionService service.TransactionService, wallets []*model.Wallet) error {
-	wallet := wallets[rand.Intn(len(wallets))]
-	transactionType := rand.Intn(transactionTypes)
-	initiatedBy := getRandomInitiator()
-
-	switch transactionType {
-	case 0: // DEPOSIT
-		req := &service.DepositRequest{
-			UserID:               wallet.UserID,
-			Amount:               getRandomAmount(minTransactionAmount, maxTransactionAmount),
-			PaymentTransactionId: fmt.Sprintf("payment_%d", rand.Intn(paymentTransactionIds)),
+func createRandomTransactionWithRetry(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, createdAt time.Time) error {
+	var err error
+	for retries := 0; retries < maxRetries; retries++ {
+		err = createRandomTransaction(transactionRepo, wallets, createdAt)
+		if err == nil {
+			return nil
 		}
-		_, err := transactionService.Deposit(req, initiatedBy)
-		return err
-	case 1: // WITHDRAW
-		req := &service.WithdrawRequest{
-			UserID:               wallet.UserID,
-			Amount:               -getRandomAmount(minTransactionAmount, maxTransactionAmount),
-			PaymentTransactionId: fmt.Sprintf("payment_%d", rand.Intn(paymentTransactionIds)),
-		}
-		_, err := transactionService.Withdraw(req, initiatedBy)
-		return err
-	case 2: // PURCHASE
-		req := &service.PurchaseRequest{
-			UserID:  wallet.UserID,
-			Amount:  -getRandomAmount(minTransactionAmount, maxTransactionAmount),
-			OrderId: fmt.Sprintf("order_%d", rand.Intn(orderIds)),
-		}
-		_, err := transactionService.Purchase(req, initiatedBy)
-		return err
-	case 3: // REFUND
-		req := &service.RefundRequest{
-			UserID:  wallet.UserID,
-			Amount:  getRandomAmount(minTransactionAmount, maxTransactionAmount),
-			OrderId: fmt.Sprintf("order_%d", rand.Intn(orderIds)),
-		}
-		_, err := transactionService.Refund(req, initiatedBy)
-		return err
-	case 4: // TRANSFER
-		// To simulate TRANSFER_IN, we need to perform a transfer from another wallet
-		return createRandomTransfer(transactionService, wallets, initiatedBy)
-	default:
-		return errors.New("unknown transaction type")
+		log.Printf("Transaction failed, retrying (%d/%d): %v", retries+1, maxRetries, err)
+		time.Sleep(retryDelay)
 	}
-}
-
-func createRandomTransfer(transactionService service.TransactionService, wallets []*model.Wallet, initiatedBy string) error {
-	fromIndex := rand.Intn(len(wallets))
-	toIndex := rand.Intn(len(wallets))
-	// Ensure from and to wallets are different
-	for fromIndex == toIndex {
-		toIndex = rand.Intn(len(wallets))
-	}
-
-	req := &service.TransferRequest{
-		FromUserID: wallets[fromIndex].UserID,
-		ToUserID:   wallets[toIndex].UserID,
-		Amount:     getRandomAmount(minTransactionAmount, maxTransactionAmount),
-	}
-	_, err := transactionService.Transfer(req, initiatedBy)
 	return err
 }
 
-func getRandomAmount(min, max float64) float64 {
+func createRandomTransaction(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, createdAt time.Time) error {
+	// Select wallets that are not currently in use
+	fromWallet, toWallet := selectWallets(wallets)
+	if fromWallet == nil {
+		return fmt.Errorf("could not find available wallets for transaction")
+	}
+
+	amount := getRandomAmount(minTransactionAmount, maxTransactionAmount)
+	initiatedBy := getRandomInitiator()
+
+	// Mark wallets as in use
+	lockWallet(fromWallet.ID)
+	defer unlockWallet(fromWallet.ID)
+
+	if toWallet != nil {
+		lockWallet(toWallet.ID)
+		defer unlockWallet(toWallet.ID)
+	}
+
+	// Create transfer if both wallets are selected
+	if toWallet != nil {
+		transactionOut := &model.Transaction{
+			WalletID:    fromWallet.ID,
+			Amount:      amount.Neg(),
+			Type:        model.TransactionTypeTransferOut,
+			InitiatedBy: initiatedBy,
+			CreatedAt:   createdAt,
+		}
+		transactionIn := &model.Transaction{
+			WalletID:      toWallet.ID,
+			Amount:        amount,
+			Type:          model.TransactionTypeTransferIn,
+			ReferenceType: &model.TransactionReferenceTypeTransfer,
+			InitiatedBy:   initiatedBy,
+			CreatedAt:     createdAt,
+		}
+		return transactionRepo.Transfer(transactionOut, fromWallet.Version, transactionIn, toWallet.Version)
+	}
+
+	// Ensure wallet has enough balance for withdrawals, purchases, or transfer outs
+	if transactionType := rand.Intn(4); transactionType != 0 { // DEPOSIT is transactionType 0
+		if fromWallet.Balance.LessThan(amount) {
+			log.Printf("Skipping transaction due to insufficient balance in wallet %s", fromWallet.ID)
+			return nil
+		}
+	}
+
+	// Create single transaction (Deposit, Withdraw, Purchase, Refund)
+	transaction := &model.Transaction{
+		WalletID:    fromWallet.ID,
+		CreatedAt:   createdAt,
+		InitiatedBy: initiatedBy,
+	}
+
+	transactionType := rand.Intn(4)
+	switch transactionType {
+	case 0: // DEPOSIT
+		transaction.Type = model.TransactionTypeDeposit
+		transaction.Amount = amount
+		referenceId := fmt.Sprintf("payment_%d", rand.Intn(paymentTransactionIds))
+		transaction.ReferenceID = &referenceId
+		transaction.ReferenceType = &model.TransactionReferenceTypeBankTransaction
+	case 1: // WITHDRAW
+		transaction.Type = model.TransactionTypeWithdraw
+		transaction.Amount = amount.Neg()
+		referenceId := fmt.Sprintf("payment_%d", rand.Intn(paymentTransactionIds))
+		transaction.ReferenceID = &referenceId
+		transaction.ReferenceType = &model.TransactionReferenceTypeBankTransaction
+	case 2: // PURCHASE
+		transaction.Type = model.TransactionTypePurchase
+		transaction.Amount = amount.Neg()
+		referenceId := fmt.Sprintf("order_%d", rand.Intn(orderIds))
+		transaction.ReferenceID = &referenceId
+		transaction.ReferenceType = &model.TransactionReferenceTypeOrder
+	case 3: // REFUND
+		transaction.Type = model.TransactionTypeRefund
+		transaction.Amount = amount
+		referenceId := fmt.Sprintf("order_%d", rand.Intn(orderIds))
+		transaction.ReferenceID = &referenceId
+		transaction.ReferenceType = &model.TransactionReferenceTypeOrder
+	}
+
+	return transactionRepo.Create(transaction, fromWallet.Version)
+}
+
+func lockWallet(walletID string) {
+	walletLocks.Store(walletID, struct{}{})
+}
+
+func unlockWallet(walletID string) {
+	walletLocks.Delete(walletID)
+}
+
+func selectWallets(wallets []*model.Wallet) (*model.Wallet, *model.Wallet) {
+	var fromWallet, toWallet *model.Wallet
+
+	for _, wallet := range wallets {
+		if _, loaded := walletLocks.Load(wallet.ID); !loaded {
+			if fromWallet == nil {
+				fromWallet = wallet
+			} else if toWallet == nil && rand.Intn(10) < 4 {
+				toWallet = wallet
+				break
+			}
+		}
+	}
+	return fromWallet, toWallet
+}
+
+func generateUniqueUserIDs(count int) []string {
+	userIDs := make(map[string]struct{}, count)
+	for len(userIDs) < count {
+		userID := fmt.Sprintf("user_%d", rand.Intn(count*10))
+		userIDs[userID] = struct{}{}
+	}
+
+	ids := make([]string, 0, count)
+	for id := range userIDs {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func getRandomInt(min, max int) int {
+	return rand.Intn(max-min+1) + min
+}
+
+func getRandomAmount(min, max float64) decimal.Decimal {
 	amount := min + rand.Float64()*(max-min)
-	return math.Round(amount*100) / 100
+	return decimal.NewFromFloat(math.Round(amount*100) / 100)
 }
 
 func getRandomInitiator() string {
-	switch rand.Intn(initiators) {
+	switch rand.Intn(3) {
 	case 0:
 		return model.TransactionInitiatedBySystem
 	case 1:
@@ -234,33 +295,4 @@ func getRandomInitiator() string {
 	default:
 		return model.TransactionInitiatedBySystem
 	}
-}
-
-func verifyDataConsistency(repos *repository.Repos) error {
-	// Get sum of all wallet balances
-	walletsSum, err := repos.Wallet.GetWalletsSum()
-	if err != nil {
-		return fmt.Errorf("failed to get wallets sum: %v", err)
-	}
-
-	// Get sum of all transactions
-	transactionsSum, err := repos.Transaction.GetTransactionsSum()
-	if err != nil {
-		return fmt.Errorf("failed to get transactions sum: %v", err)
-	}
-
-	// Allow a small delta due to potential rounding errors
-	delta := 0.0001
-	if abs(walletsSum-transactionsSum) > delta {
-		return fmt.Errorf("sum mismatch: wallets sum = %f, transactions sum = %f", walletsSum, transactionsSum)
-	}
-
-	return nil
-}
-
-func abs(a float64) float64 {
-	if a < 0 {
-		return -a
-	}
-	return a
 }

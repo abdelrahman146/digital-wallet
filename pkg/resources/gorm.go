@@ -5,14 +5,13 @@ import (
 	"digital-wallet/pkg/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gormLogger "gorm.io/gorm/logger"
 )
 
 func InitDB() *gorm.DB {
 	dsn := config.GetConfig().GetDbConnectionString()
 	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		TranslateError: true,
-		Logger:         gormLogger.Default.LogMode(gormLogger.Info),
+		//Logger:         gormLogger.Default.LogMode(gormLogger.Info),
 	})
 	if err != nil {
 		logger.GetLogger().Panic("failed to connect to database", logger.Field("error", err))
