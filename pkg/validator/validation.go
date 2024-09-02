@@ -7,7 +7,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	"github.com/shopspring/decimal"
+	"math"
 )
 
 type validatorStruct struct {
@@ -55,11 +55,11 @@ func (v *validatorStruct) GetValidationErrors(err error) map[string]string {
 }
 
 func (v *validatorStruct) Decimal2(fl validator.FieldLevel) bool {
-	amount, ok := fl.Field().Interface().(decimal.Decimal)
+	amount, ok := fl.Field().Interface().(float64)
 	if !ok {
 		return false
 	}
-	return amount.Equal(amount.Round(2))
+	return amount == math.Round(amount*100)/100
 }
 
 func (v *validatorStruct) registerDecimal2Translation() error {

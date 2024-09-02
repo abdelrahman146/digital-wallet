@@ -15,8 +15,8 @@ type TransactionRepo interface {
 	GetTotalTransactionsByWalletID(walletId string) (int64, error)
 	Create(transaction *model.Transaction, walletVersion int64) error
 	Transfer(from *model.Transaction, fromWalletVersion int64, to *model.Transaction, toWalletVersion int64) error
-	GetTransactionsSumByWalletID(walletId string) (float64, error)
-	GetTransactionsSum() (float64, error)
+	GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error)
+	GetTransactionsSum() (decimal.Decimal, error)
 }
 
 type transactionRepo struct {
@@ -145,20 +145,20 @@ func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion in
 	})
 }
 
-func (r *transactionRepo) GetTransactionsSumByWalletID(walletId string) (float64, error) {
+func (r *transactionRepo) GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error) {
 	var sum float64
 	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("wallet_id = ?", walletId).Scan(&sum).Error
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
-	return sum, nil
+	return decimal.NewFromFloat(sum), nil
 }
 
-func (r *transactionRepo) GetTransactionsSum() (float64, error) {
+func (r *transactionRepo) GetTransactionsSum() (decimal.Decimal, error) {
 	var sum float64
 	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
-	return sum, nil
+	return decimal.NewFromFloat(sum), nil
 }

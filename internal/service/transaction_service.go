@@ -6,6 +6,7 @@ import (
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
 	"digital-wallet/pkg/validator"
+	"github.com/shopspring/decimal"
 )
 
 type TransactionService interface {
@@ -15,8 +16,8 @@ type TransactionService interface {
 	Purchase(req *PurchaseRequest, initiatedBy string) (*model.Transaction, error)
 	Transfer(req *TransferRequest, initiatedBy string) (*model.Transaction, error)
 	GetTransactionsByWalletID(walletId string, page int, limit int) (*api.List[model.Transaction], error)
-	GetTransactionsSumByWalletID(walletId string) (float64, error)
-	GetTransactionsSum() (float64, error)
+	GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error)
+	GetTransactionsSum() (decimal.Decimal, error)
 }
 
 type transactionService struct {
@@ -38,7 +39,7 @@ func (s *transactionService) Deposit(req *DepositRequest, initiatedBy string) (*
 	}
 	transaction := &model.Transaction{
 		WalletID:      wallet.ID,
-		Amount:        req.Amount,
+		Amount:        decimal.NewFromFloat(req.Amount),
 		Type:          model.TransactionTypeDeposit,
 		ReferenceID:   &req.PaymentTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
@@ -61,7 +62,7 @@ func (s *transactionService) Withdraw(req *WithdrawRequest, initiatedBy string) 
 	}
 	transaction := &model.Transaction{
 		WalletID:      wallet.ID,
-		Amount:        req.Amount,
+		Amount:        decimal.NewFromFloat(req.Amount),
 		Type:          model.TransactionTypeWithdraw,
 		ReferenceID:   &req.PaymentTransactionId,
 		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
@@ -84,7 +85,7 @@ func (s *transactionService) Refund(req *RefundRequest, initiatedBy string) (*mo
 	}
 	transaction := &model.Transaction{
 		WalletID:      wallet.ID,
-		Amount:        req.Amount,
+		Amount:        decimal.NewFromFloat(req.Amount),
 		Type:          model.TransactionTypeRefund,
 		ReferenceID:   &req.OrderId,
 		ReferenceType: &model.TransactionReferenceTypeOrder,
@@ -107,7 +108,7 @@ func (s *transactionService) Purchase(req *PurchaseRequest, initiatedBy string) 
 	}
 	transaction := &model.Transaction{
 		WalletID:      wallet.ID,
-		Amount:        req.Amount,
+		Amount:        decimal.NewFromFloat(req.Amount),
 		Type:          model.TransactionTypePurchase,
 		ReferenceID:   &req.OrderId,
 		ReferenceType: &model.TransactionReferenceTypeOrder,
@@ -134,13 +135,13 @@ func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) 
 	}
 	transactionOut := &model.Transaction{
 		WalletID:    fromWallet.ID,
-		Amount:      req.Amount.Neg(),
+		Amount:      decimal.NewFromFloat(req.Amount).Neg(),
 		Type:        model.TransactionTypeTransferOut,
 		InitiatedBy: initiatedBy,
 	}
 	transactionIn := &model.Transaction{
 		WalletID:      toWallet.ID,
-		Amount:        req.Amount,
+		Amount:        decimal.NewFromFloat(req.Amount),
 		Type:          model.TransactionTypeTransferIn,
 		ReferenceType: &model.TransactionReferenceTypeTransfer,
 		InitiatedBy:   initiatedBy,
@@ -163,18 +164,18 @@ func (s *transactionService) GetTransactionsByWalletID(walletId string, page int
 	return &api.List[model.Transaction]{Items: transactions, Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *transactionService) GetTransactionsSumByWalletID(walletId string) (float64, error) {
+func (s *transactionService) GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error) {
 	sum, err := s.repos.Transaction.GetTransactionsSumByWalletID(walletId)
 	if err != nil {
-		return 0, errs.NewInternalError("failed to get transactions sum", err)
+		return decimal.Zero, errs.NewInternalError("failed to get transactions sum", err)
 	}
 	return sum, nil
 }
 
-func (s *transactionService) GetTransactionsSum() (float64, error) {
+func (s *transactionService) GetTransactionsSum() (decimal.Decimal, error) {
 	sum, err := s.repos.Transaction.GetTransactionsSum()
 	if err != nil {
-		return 0, errs.NewInternalError("failed to get transactions sum", err)
+		return decimal.Zero, errs.NewInternalError("failed to get transactions sum", err)
 	}
 	return sum, nil
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"digital-wallet/internal/model"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +12,7 @@ type WalletRepo interface {
 	GetWalletByID(walletId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) ([]model.Wallet, error)
 	GetTotalWallets() (int64, error)
-	GetWalletsSum() (float64, error)
+	GetWalletsSum() (decimal.Decimal, error)
 }
 
 type walletRepo struct {
@@ -44,13 +45,13 @@ func (r *walletRepo) GetWalletByID(walletId string) (*model.Wallet, error) {
 	return &wallet, nil
 }
 
-func (r *walletRepo) GetWalletsSum() (float64, error) {
+func (r *walletRepo) GetWalletsSum() (decimal.Decimal, error) {
 	var sum float64
 	err := r.db.Model(&model.Wallet{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
-	return sum, nil
+	return decimal.NewFromFloat(sum), nil
 }
 
 func (r *walletRepo) GetWallets(page int, limit int) ([]model.Wallet, error) {

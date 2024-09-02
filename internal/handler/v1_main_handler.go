@@ -4,7 +4,6 @@ import (
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"github.com/gofiber/fiber/v2"
-	"math"
 	"net/http"
 )
 
@@ -32,7 +31,7 @@ func (h *v1MainHandler) CheckIntegrity(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	diff := math.Abs(transactionsSum - walletsSum)
+	diff := transactionsSum.Sub(walletsSum).Abs()
 	return c.Status(http.StatusOK).JSON(api.NewSuccessResponse(fiber.Map{
 		"transactionsSum": transactionsSum,
 		"walletsSum":      walletsSum,

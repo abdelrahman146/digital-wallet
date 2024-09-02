@@ -4,6 +4,7 @@ import (
 	"digital-wallet/internal/model"
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
+	"github.com/shopspring/decimal"
 )
 
 type WalletService interface {
@@ -11,7 +12,7 @@ type WalletService interface {
 	GetWalletByUserID(userId string) (*model.Wallet, error)
 	GetWalletByID(walletId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) (*api.List[model.Wallet], error)
-	GetWalletsSum() (float64, error)
+	GetWalletsSum() (decimal.Decimal, error)
 }
 
 type walletService struct {
@@ -49,10 +50,10 @@ func (s *walletService) GetWalletByID(walletId string) (*model.Wallet, error) {
 	return wallet, nil
 }
 
-func (s *walletService) GetWalletsSum() (float64, error) {
+func (s *walletService) GetWalletsSum() (decimal.Decimal, error) {
 	sum, err := s.repos.Wallet.GetWalletsSum()
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
 	return sum, nil
 }
