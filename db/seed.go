@@ -17,9 +17,9 @@ const (
 	startDateString         = "2024-01-01"
 	endDateString           = "2024-08-30"
 	minWalletsPerDay        = 100
-	maxWalletsPerDay        = 1000
-	minTransactionsPerDay   = 10000
-	maxTransactionsPerDay   = 100000
+	maxWalletsPerDay        = 200
+	minTransactionsPerDay   = 200
+	maxTransactionsPerDay   = 1000
 	minTransactionAmount    = 10.0
 	maxTransactionAmount    = 1000.0
 	paymentTransactionIds   = 1000000
