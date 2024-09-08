@@ -43,7 +43,7 @@ func main() {
 	db := resources.InitDB()
 
 	// Initialize repositories
-	walletRepo := repository.NewWalletRepo(db)
+	walletRepo := repository.NewAccountRepo(db)
 	transactionRepo := repository.NewTransactionRepo(db)
 
 	// Seed data for each day between startDate and endDate
@@ -70,10 +70,10 @@ func main() {
 	log.Println("Seeding completed successfully.")
 }
 
-func generateWallets(walletRepo repository.WalletRepo, count int, createdAt time.Time) ([]*model.Wallet, error) {
+func generateWallets(walletRepo repository.AccountRepo, count int, createdAt time.Time) ([]*model.Account, error) {
 	var (
-		wallets   = make([]*model.Wallet, 0, count)
-		userIDs   = generateUniqueUserIDs(count)
+		wallets   = make([]*model.Account, 0, count)
+		userIds   = generateUniqueUserIDs(count)
 		wg        sync.WaitGroup
 		walletMux sync.Mutex
 		sem       = make(chan struct{}, maxConcurrentOperations)
@@ -83,29 +83,29 @@ func generateWallets(walletRepo repository.WalletRepo, count int, createdAt time
 		wg.Add(1)
 		sem <- struct{}{}
 
-		go func(userID string) {
+		go func(userId string) {
 			defer wg.Done()
 			defer func() { <-sem }()
 
 			// Initialize wallet with a random balance to avoid insufficient balance issues
 			initialBalance := getRandomAmount(minTransactionAmount, maxTransactionAmount)
-			wallet := &model.Wallet{
-				UserID:    userID,
+			wallet := &model.Account{
+				UserID:    userId,
 				Balance:   initialBalance,
 				CreatedAt: createdAt,
 				UpdatedAt: createdAt,
 			}
 
-			err := walletRepo.CreateWallet(wallet)
+			err := walletRepo.CreateAccount(wallet)
 			if err != nil {
-				log.Printf("Failed to create wallet for user %s: %v", userID, err)
+				log.Printf("Failed to create wallet for user %s: %v", userId, err)
 				return
 			}
 
 			walletMux.Lock()
 			wallets = append(wallets, wallet)
 			walletMux.Unlock()
-		}(userIDs[i])
+		}(userIds[i])
 	}
 
 	wg.Wait()
@@ -113,7 +113,7 @@ func generateWallets(walletRepo repository.WalletRepo, count int, createdAt time
 	return wallets, nil
 }
 
-func generateTransactions(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, count int, createdAt time.Time) error {
+func generateTransactions(transactionRepo repository.TransactionRepo, wallets []*model.Account, count int, createdAt time.Time) error {
 	var (
 		wg  sync.WaitGroup
 		sem = make(chan struct{}, maxConcurrentOperations)
@@ -139,7 +139,7 @@ func generateTransactions(transactionRepo repository.TransactionRepo, wallets []
 	return nil
 }
 
-func createRandomTransactionWithRetry(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, createdAt time.Time) error {
+func createRandomTransactionWithRetry(transactionRepo repository.TransactionRepo, wallets []*model.Account, createdAt time.Time) error {
 	var err error
 	for retries := 0; retries < maxRetries; retries++ {
 		err = createRandomTransaction(transactionRepo, wallets, createdAt)
@@ -152,7 +152,7 @@ func createRandomTransactionWithRetry(transactionRepo repository.TransactionRepo
 	return err
 }
 
-func createRandomTransaction(transactionRepo repository.TransactionRepo, wallets []*model.Wallet, createdAt time.Time) error {
+func createRandomTransaction(transactionRepo repository.TransactionRepo, wallets []*model.Account, createdAt time.Time) error {
 	// Select wallets that are not currently in use
 	fromWallet, toWallet := selectWallets(wallets)
 	if fromWallet == nil {
@@ -237,16 +237,16 @@ func createRandomTransaction(transactionRepo repository.TransactionRepo, wallets
 	return transactionRepo.Create(transaction, fromWallet.Version)
 }
 
-func lockWallet(walletID string) {
-	walletLocks.Store(walletID, struct{}{})
+func lockWallet(walletId string) {
+	walletLocks.Store(walletId, struct{}{})
 }
 
-func unlockWallet(walletID string) {
-	walletLocks.Delete(walletID)
+func unlockWallet(walletId string) {
+	walletLocks.Delete(walletId)
 }
 
-func selectWallets(wallets []*model.Wallet) (*model.Wallet, *model.Wallet) {
-	var fromWallet, toWallet *model.Wallet
+func selectWallets(wallets []*model.Account) (*model.Account, *model.Account) {
+	var fromWallet, toWallet *model.Account
 
 	for _, wallet := range wallets {
 		if _, loaded := walletLocks.Load(wallet.ID); !loaded {
@@ -262,14 +262,14 @@ func selectWallets(wallets []*model.Wallet) (*model.Wallet, *model.Wallet) {
 }
 
 func generateUniqueUserIDs(count int) []string {
-	userIDs := make(map[string]struct{}, count)
-	for len(userIDs) < count {
-		userID := fmt.Sprintf("user_%d", rand.Intn(count*10))
-		userIDs[userID] = struct{}{}
+	userIds := make(map[string]struct{}, count)
+	for len(userIds) < count {
+		userId := fmt.Sprintf("user_%d", rand.Intn(count*10))
+		userIds[userId] = struct{}{}
 	}
 
 	ids := make([]string, 0, count)
-	for id := range userIDs {
+	for id := range userIds {
 		ids = append(ids, id)
 	}
 	return ids

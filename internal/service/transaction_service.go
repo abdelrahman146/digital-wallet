@@ -33,7 +33,7 @@ func (s *transactionService) Deposit(req *DepositRequest, initiatedBy string) (*
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid deposit request", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByUserID(req.UserID)
+	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("wallet not found", err)
 	}
@@ -56,7 +56,7 @@ func (s *transactionService) Withdraw(req *WithdrawRequest, initiatedBy string) 
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid withdraw request", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByUserID(req.UserID)
+	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("wallet not found", err)
 	}
@@ -79,7 +79,7 @@ func (s *transactionService) Refund(req *RefundRequest, initiatedBy string) (*mo
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid refund request", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByUserID(req.UserID)
+	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("wallet not found", err)
 	}
@@ -102,7 +102,7 @@ func (s *transactionService) Purchase(req *PurchaseRequest, initiatedBy string) 
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid purchase request", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByUserID(req.UserID)
+	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("wallet not found", err)
 	}
@@ -125,11 +125,11 @@ func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) 
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("invalid transfer request", fields)
 	}
-	fromWallet, err := s.repos.Wallet.GetWalletByUserID(req.FromUserID)
+	fromWallet, err := s.repos.Account.GetAccountByUserID(req.FromUserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("from wallet not found", err)
 	}
-	toWallet, err := s.repos.Wallet.GetWalletByUserID(req.ToUserID)
+	toWallet, err := s.repos.Account.GetAccountByUserID(req.ToUserID)
 	if err != nil {
 		return nil, errs.NewNotFoundError("to wallet not found", err)
 	}
@@ -153,11 +153,11 @@ func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) 
 }
 
 func (s *transactionService) GetTransactionsByWalletID(walletId string, page int, limit int) (*api.List[model.Transaction], error) {
-	transactions, err := s.repos.Transaction.GetTransactionsByWalletID(walletId, page, limit)
+	transactions, err := s.repos.Transaction.GetTransactionsByAccountID(walletId, page, limit)
 	if err != nil {
 		return nil, errs.NewInternalError("failed to get transactions", err)
 	}
-	total, err := s.repos.Transaction.GetTotalTransactionsByWalletID(walletId)
+	total, err := s.repos.Transaction.GetTotalTransactionsByAccountID(walletId)
 	if err != nil {
 		return nil, errs.NewInternalError("failed to get total transactions", err)
 	}
@@ -165,7 +165,7 @@ func (s *transactionService) GetTransactionsByWalletID(walletId string, page int
 }
 
 func (s *transactionService) GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error) {
-	sum, err := s.repos.Transaction.GetTransactionsSumByWalletID(walletId)
+	sum, err := s.repos.Transaction.GetTransactionsSumByAccountID(walletId)
 	if err != nil {
 		return decimal.Zero, errs.NewInternalError("failed to get transactions sum", err)
 	}

@@ -52,7 +52,7 @@ func main() {
 
 	// Define repositories
 	repos := &repository.Repos{
-		Wallet:      repository.NewWalletRepo(db),
+		Account:     repository.NewAccountRepo(db),
 		Transaction: repository.NewTransactionRepo(db),
 	}
 
@@ -64,9 +64,14 @@ func main() {
 
 	// Define versioned routes
 	v1 := app.Group("/v1")
+	walletGroup := v1.Group("/wallets")
 
 	// Define handlers
-	handler.NewV1WalletHandler(v1, services)
+	handler.NewV1WalletHandler(walletGroup, services)
+	handler.NewV1TierHandler(v1, services)
+	handler.NewV1UserHandler(v1, services)
+
+	handler.NewV1AccountHandler(v1, services)
 	handler.NewV1TransactionsHandler(v1, services)
 	handler.NewV1MainHandler(app, services)
 

@@ -27,7 +27,7 @@ func (h *v1MainHandler) CheckIntegrity(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	walletsSum, err := h.services.Wallet.GetWalletsSum()
+	walletsSum, err := h.services.Account.GetAccountsSum()
 	if err != nil {
 		return err
 	}
