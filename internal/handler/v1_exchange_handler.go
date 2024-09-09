@@ -87,7 +87,7 @@ func (h *v1ExchangeRateHandler) DeleteExchangeRate(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusNoContent).JSON(api.NewSuccessResponse(nil))
+	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(nil))
 }
 
 func (h *v1ExchangeRateHandler) Exchange(c *fiber.Ctx) error {

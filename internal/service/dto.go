@@ -20,7 +20,7 @@ type CreateExchangeRateRequest struct {
 
 type CreateUserRequest struct {
 	ID     string `json:"id,omitempty" validate:"required,min=1,max=20"`
-	TierID string `json:"tierId,omitempty"`
+	TierID string `json:"tierId,omitempty" validate:"required"`
 }
 
 type CreateTierRequest struct {

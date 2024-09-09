@@ -5,6 +5,7 @@ import (
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
 	"github.com/gofiber/fiber/v2"
+	"math"
 )
 
 type v1walletHandler struct {
@@ -22,9 +23,11 @@ func NewV1WalletHandler(appGroup fiber.Router, services *service.Services) {
 func (h *v1walletHandler) Setup(group fiber.Router) {
 	group.Post("/", h.CreateWallet)
 	group.Get("/", h.GetWallets)
+	group.Get("/:walletId/check-integrity", h.CheckWalletIntegrity)
 	group.Get("/:walletId", h.GetWalletByID)
 	group.Put("/:walletId", h.UpdateWallet)
 	group.Delete("/:walletId", h.DeleteWallet)
+
 }
 
 func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
@@ -79,5 +82,24 @@ func (h *v1walletHandler) DeleteWallet(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusNoContent).JSON(api.NewSuccessResponse(nil))
+	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(nil))
+}
+
+func (h *v1walletHandler) CheckWalletIntegrity(c *fiber.Ctx) error {
+	id := c.Params("walletId")
+	accountsSum, err := h.services.Wallet.GetAccountsSum(id)
+	if err != nil {
+		return err
+	}
+	transactionsSum, err := h.services.Wallet.GetTransactionsSum(id)
+	if err != nil {
+		return err
+	}
+	diff := math.Abs(float64(accountsSum - transactionsSum))
+
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(fiber.Map{
+		"accountsSum":     accountsSum,
+		"transactionsSum": transactionsSum,
+		"diff":            diff,
+	}))
 }

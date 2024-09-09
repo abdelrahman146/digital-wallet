@@ -11,6 +11,8 @@ import (
 
 type WalletService interface {
 	CreateWallet(req *CreateWalletRequest) (*model.Wallet, error)
+	GetAccountsSum(walletId string) (uint64, error)
+	GetTransactionsSum(walletId string) (uint64, error)
 	UpdateWallet(walletId string, req *UpdateWalletRequest) (*model.Wallet, error)
 	GetWalletByID(walletId string) (*model.Wallet, error)
 	GetWallets(page int, limit int) (*api.List[model.Wallet], error)
@@ -28,7 +30,7 @@ func NewWalletService(repos *repository.Repos) WalletService {
 func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid withdraw request", fields)
+		return nil, errs.NewValidationError("invalid request", fields)
 	}
 	wallet := &model.Wallet{
 		ID:           req.ID,
@@ -52,7 +54,7 @@ func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, e
 func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid withdraw request", fields)
+		return nil, errs.NewValidationError("invalid request", fields)
 	}
 	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if err != nil {
@@ -98,4 +100,12 @@ func (s *walletService) GetWallets(page int, limit int) (*api.List[model.Wallet]
 
 func (s *walletService) DeleteWallet(walletId string) error {
 	return s.repos.Wallet.DeleteWallet(walletId)
+}
+
+func (s *walletService) GetAccountsSum(walletId string) (uint64, error) {
+	return s.repos.Account.GetAccountsSum(walletId)
+}
+
+func (s *walletService) GetTransactionsSum(walletId string) (uint64, error) {
+	return s.repos.Transaction.GetTransactionsSum(walletId)
 }

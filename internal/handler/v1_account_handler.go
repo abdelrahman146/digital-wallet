@@ -67,7 +67,7 @@ func (h *v1AccountHandler) GetAccountByID(c *fiber.Ctx) error {
 func (h *v1AccountHandler) CreateAccount(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	var req struct {
-		UserID string `json:"userId,omitempty" validate:"required,uuid"`
+		UserID string `json:"userId,omitempty" validate:"required"`
 	}
 
 	// Parse request body
@@ -113,7 +113,7 @@ func (h *v1AccountHandler) DeleteAccount(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusNoContent).JSON(api.NewSuccessResponse(nil))
+	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(nil))
 }
 
 func (h *v1AccountHandler) GetAccountTransactionsByAccountID(c *fiber.Ctx) error {

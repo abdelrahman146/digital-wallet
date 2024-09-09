@@ -74,6 +74,17 @@ BEGIN
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
     )';
 
+    EXECUTE 'CREATE TABLE IF NOT EXISTS ' || schema_name || '.programs (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        trigger_slug TEXT REFERENCES public.triggers(slug) ON DELETE CASCADE NOT NULL,
+        condition JSONB NOT NULL,
+        effect JSONB NOT NULL,
+        limit_per_user INT CHECK (limit_per_user >= 0),
+        limit_global INT CHECK (limit_global >= 0),
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )';
+
     -- Create partitioned transactions table
     EXECUTE 'CREATE TABLE IF NOT EXISTS ' || schema_name || '.transactions (
         id TEXT PRIMARY KEY DEFAULT generate_transaction_id(' || quote_literal(id) || '),
@@ -98,7 +109,7 @@ BEGIN
             '.transactions (account_id)';
     EXECUTE 'CREATE INDEX IF NOT EXISTS transactions_type_idx ON ' || schema_name || '.transactions (type)';
     EXECUTE 'CREATE INDEX IF NOT EXISTS transactions_actor_type_idx ON ' || schema_name ||
-            '.transactions (transaction_actor_type)';
+            '.transactions (actor_type)';
 
     -- Create transactions partitions (standard strategy - hash modulus)
     EXECUTE 'CREATE TABLE IF NOT EXISTS ' || schema_name || '.transactions_part_1 PARTITION OF ' || schema_name || '.transactions
@@ -112,17 +123,6 @@ BEGIN
 
     EXECUTE 'CREATE TABLE IF NOT EXISTS ' || schema_name || '.transactions_part_4 PARTITION OF ' || schema_name || '.transactions
         FOR VALUES WITH (MODULUS 4, REMAINDER 3)';
-
-    EXECUTE 'CREATE TABLE IF NOT EXISTS ' || schema_name || '.programs (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        trigger_slug TEXT REFERENCES public.triggers(slug) ON DELETE CASCADE NOT NULL,
-        condition JSONB NOT NULL,
-        effect JSONB NOT NULL,
-        limit_per_user INT CHECK (limit_per_user >= 0),
-        limit_global INT CHECK (limit_global >= 0),
-        created_at TIMESTAMP DEFAULT NOW() NOT NULL
-    )';
 
 END;
 $$ LANGUAGE plpgsql;

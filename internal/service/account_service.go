@@ -26,13 +26,7 @@ func NewAccountService(repos *repository.Repos) AccountService {
 func (s *accountService) CreateAccount(walletId, userId string) (*model.Account, error) {
 	user, _ := s.repos.User.GetUserByID(userId)
 	if user == nil {
-		user = &model.User{
-			ID: userId,
-		}
-		err := s.repos.User.CreateUser(user)
-		if err != nil {
-			return nil, err
-		}
+		return nil, errs.NewNotFoundError("user not found", nil)
 	}
 	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {

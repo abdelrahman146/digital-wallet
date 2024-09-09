@@ -79,7 +79,6 @@ func main() {
 	handler.NewV1ExchangeRateHandler(v1, services)
 	handler.NewV1TierHandler(v1, services)
 	handler.NewV1UserHandler(v1, services)
-	handler.NewV1MainHandler(app, services)
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {

@@ -105,7 +105,7 @@ func (r *userRepo) GetUserByID(userId string) (*model.User, error) {
 		return nil, err
 	}
 
-	accounts, err := r.GetUsersAccounts([]string{userId})
+	accounts, err := r.GetUsersAccounts([]string{fmt.Sprintf("'%s'", userId)})
 	if err != nil {
 		return nil, err
 	}
