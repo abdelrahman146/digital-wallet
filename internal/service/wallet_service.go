@@ -36,6 +36,7 @@ func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, e
 		Description:  req.Description,
 		Currency:     req.Currency,
 		LimitPerUser: req.LimitPerUser,
+		IsMonetary:   req.IsMonetary,
 		LimitGlobal:  req.LimitGlobal,
 	}
 	if req.PointsExpireAfter != nil {
@@ -62,6 +63,9 @@ func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) 
 	wallet.Currency = req.Currency
 	wallet.LimitPerUser = req.LimitPerUser
 	wallet.LimitGlobal = req.LimitGlobal
+	if req.IsMonetary != nil {
+		wallet.IsMonetary = *req.IsMonetary
+	}
 	if req.PointsExpireAfter != nil {
 		pointsExpireAfter := time.Duration(*req.PointsExpireAfter) * time.Millisecond
 		wallet.PointsExpireAfter = &pointsExpireAfter

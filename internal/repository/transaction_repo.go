@@ -10,11 +10,13 @@ import (
 )
 
 type TransactionRepo interface {
-	GetTransactionsByAccountID(accountId string, page int, limit int) ([]model.Transaction, error)
-	GetTotalTransactionsByAccountID(accountId string) (int64, error)
-	Create(transaction *model.Transaction, accountVersion uint64) error
-	GetTransactionsSumByAccountID(accountId string) (uint64, error)
-	GetTransactionsSum() (uint64, error)
+	GetTransactionsByAccountID(walletId, accountId string, page int, limit int) ([]model.Transaction, error)
+	GetTotalTransactionsByAccountID(walletId, accountId string) (int64, error)
+	GetTransactions(walletId string, page int, limit int) ([]model.Transaction, error)
+	GetTotalTransactions(walletId string) (int64, error)
+	Create(walletId string, transaction *model.Transaction, accountVersion uint64) error
+	GetTransactionsSumByAccountID(walletId string, accountId string) (uint64, error)
+	GetTransactionsSum(walletId string) (uint64, error)
 }
 
 type transactionRepo struct {
@@ -25,9 +27,9 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 	return &transactionRepo{db: db}
 }
 
-func (r *transactionRepo) GetTransactionsByAccountID(accountId string, page int, limit int) ([]model.Transaction, error) {
+func (r *transactionRepo) GetTransactionsByAccountID(walletId, accountId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("account_id = ?", accountId).Order("version desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Where("account_id = ?", accountId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
 		logger.GetLogger().Error("Error while fetching transactions by account id", logger.Field("error", err))
 		return nil, err
@@ -35,9 +37,9 @@ func (r *transactionRepo) GetTransactionsByAccountID(accountId string, page int,
 	return transactions, nil
 }
 
-func (r *transactionRepo) GetTotalTransactionsByAccountID(accountId string) (int64, error) {
+func (r *transactionRepo) GetTotalTransactionsByAccountID(walletId, accountId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		logger.GetLogger().Error("Error while fetching total transactions by account id", logger.Field("error", err))
 		return 0, err
@@ -45,8 +47,8 @@ func (r *transactionRepo) GetTotalTransactionsByAccountID(accountId string) (int
 	return total, nil
 }
 
-func (r *transactionRepo) Create(transaction *model.Transaction, accountVersion uint64) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
+func (r *transactionRepo) Create(walletId string, transaction *model.Transaction, accountVersion uint64) error {
+	return r.db.Exec("SET search_path TO ?", walletId).Transaction(func(tx *gorm.DB) error {
 		var account model.Account
 
 		// Lock the account
@@ -61,12 +63,17 @@ func (r *transactionRepo) Create(transaction *model.Transaction, accountVersion 
 		}
 
 		// check if account has sufficient balance
-		if account.Balance+transaction.Amount < 0 {
+		if transaction.Type == model.TransactionTypeDebit && account.Balance < transaction.Amount {
 			return errs.NewNotAcceptableError("insufficient balance", nil)
 		}
 
 		transaction.PreviousBalance = account.Balance
-		account.Balance = account.Balance + transaction.Amount
+		switch transaction.Type {
+		case model.TransactionTypeDebit:
+			account.Balance = account.Balance - transaction.Amount
+		case model.TransactionTypeCredit:
+			account.Balance = account.Balance + transaction.Amount
+		}
 		account.Version++
 		transaction.NewBalance = account.Balance
 		transaction.Version = account.Version
@@ -85,20 +92,38 @@ func (r *transactionRepo) Create(transaction *model.Transaction, accountVersion 
 	})
 }
 
-func (r *transactionRepo) GetTransactionsSumByAccountID(accountId string) (uint64, error) {
+func (r *transactionRepo) GetTransactionsSumByAccountID(walletId, accountId string) (uint64, error) {
 	var sum float64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
 	if err != nil {
 		return 0, err
 	}
 	return 0, nil
 }
 
-func (r *transactionRepo) GetTransactionsSum() (uint64, error) {
+func (r *transactionRepo) GetTransactionsSum(walletId string) (uint64, error) {
 	var sum uint64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
 	if err != nil {
 		return 0, err
 	}
 	return sum, nil
+}
+
+func (r *transactionRepo) GetTransactions(walletId string, page int, limit int) ([]model.Transaction, error) {
+	var transactions []model.Transaction
+	err := r.db.Exec("SET search_path TO ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func (r *transactionRepo) GetTotalTransactions(walletId string) (int64, error) {
+	var total int64
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Transaction{}).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
 }

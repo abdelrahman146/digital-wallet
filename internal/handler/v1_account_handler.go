@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"digital-wallet/internal/model"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
@@ -8,67 +9,63 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type accountHandler struct {
+type v1AccountHandler struct {
 	services *service.Services
 }
 
 func NewV1AccountHandler(appGroup fiber.Router, services *service.Services) {
-	handler := &accountHandler{
+	handler := &v1AccountHandler{
 		services: services,
 	}
 	handler.Setup(appGroup)
 }
 
-func (h *accountHandler) Setup(appGroup fiber.Router) {
-	group := appGroup.Group("/accounts")
+func (h *v1AccountHandler) Setup(appGroup fiber.Router) {
+	group := appGroup.Group("wallets/:walletId/accounts")
 	group.Get("/", h.GetAccounts)
 	group.Post("/", h.CreateAccount)
 	group.Get("/sum", h.GetAccountsSum)
-	group.Get("/user/:userId", h.GetAccountByUserID)
-	group.Get("/user/:userId/transactions", h.GetAccountTransactionsByUserID)
 	group.Get("/:accountId", h.GetAccountByID)
+	group.Delete("/:accountId", h.DeleteAccount)
 	group.Get("/:accountId/transactions", h.GetAccountTransactionsByID)
+	group.Post("/:accountId/transactions", h.CreateTransaction)
+	group.Post("/:accountId/transactions/sum", h.GetAccountTransactionsSum)
 }
 
-func (h *accountHandler) GetAccounts(c *fiber.Ctx) error {
+func (h *v1AccountHandler) GetAccounts(c *fiber.Ctx) error {
 	page, limit, err := api.GetPageAndLimit(c)
+	walletId := c.Params("walletId")
 	if err != nil {
 		return err
 	}
-	accounts, err := h.services.Account.GetAccounts(page, limit)
+	accounts, err := h.services.Account.GetAccounts(walletId, page, limit)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(accounts))
 }
 
-func (h *accountHandler) GetAccountsSum(c *fiber.Ctx) error {
-	sum, err := h.services.Account.GetAccountsSum()
+func (h *v1AccountHandler) GetAccountsSum(c *fiber.Ctx) error {
+	walletId := c.Params("walletId")
+	sum, err := h.services.Account.GetAccountsSum(walletId)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(sum))
 }
 
-func (h *accountHandler) GetAccountByID(c *fiber.Ctx) error {
+func (h *v1AccountHandler) GetAccountByID(c *fiber.Ctx) error {
+	walletId := c.Params("walletId")
 	id := c.Params("accountId")
-	account, err := h.services.Account.GetAccountByID(id)
+	account, err := h.services.Account.GetAccountByID(walletId, id)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(account))
 }
 
-func (h *accountHandler) GetAccountByUserID(c *fiber.Ctx) error {
-	id := c.Params("userId")
-	account, err := h.services.Account.GetAccountByUserID(id)
-	if err != nil {
-		return err
-	}
-	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(account))
-}
-
-func (h *accountHandler) CreateAccount(c *fiber.Ctx) error {
+func (h *v1AccountHandler) CreateAccount(c *fiber.Ctx) error {
+	walletId := c.Params("walletId")
 	var req struct {
 		UserID string `json:"userId,omitempty" validate:"required,uuid"`
 	}
@@ -84,43 +81,75 @@ func (h *accountHandler) CreateAccount(c *fiber.Ctx) error {
 		return errs.NewValidationError("Invalid Body Request", fields)
 	}
 
-	account, err := h.services.Account.CreateAccount(req.UserID)
+	account, err := h.services.Account.CreateAccount(walletId, req.UserID)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(account))
 }
 
-func (h *accountHandler) GetAccountTransactionsByID(c *fiber.Ctx) error {
+func (h *v1AccountHandler) GetAccountTransactionsByID(c *fiber.Ctx) error {
 	id := c.Params("accountId")
+	walletId := c.Params("walletId")
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
 		return err
 	}
-	_, err = h.services.Account.GetAccountByID(id)
+	_, err = h.services.Account.GetAccountByID(walletId, id)
 	if err != nil {
 		return err
 	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(id, page, limit)
+	transactions, err := h.services.Transaction.GetTransactionsByAccountID(walletId, id, page, limit)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
 }
 
-func (h *accountHandler) GetAccountTransactionsByUserID(c *fiber.Ctx) error {
-	id := c.Params("userId")
+func (h *v1AccountHandler) DeleteAccount(c *fiber.Ctx) error {
+	walletId := c.Params("walletId")
+	id := c.Params("accountId")
+	err := h.services.Account.DeleteAccount(walletId, id)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusNoContent).JSON(api.NewSuccessResponse(nil))
+}
+
+func (h *v1AccountHandler) GetAccountTransactionsByAccountID(c *fiber.Ctx) error {
+	accountId := c.Params("accountId")
+	walletId := c.Params("walletId")
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
 		return err
 	}
-	account, err := h.services.Account.GetAccountByUserID(id)
-	if err != nil {
-		return err
-	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(account.ID, page, limit)
+	transactions, err := h.services.Transaction.GetTransactionsByAccountID(walletId, accountId, page, limit)
 	if err != nil {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
+}
+
+func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
+	accountId := c.Params("accountId")
+	walletId := c.Params("walletId")
+	var req service.TransactionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return errs.NewBadRequestError("invalid request", err)
+	}
+	transaction, err := h.services.Transaction.CreateTransaction(walletId, accountId, model.TransactionActorTypeUser, "123", &req)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(transaction))
+}
+
+func (h *v1AccountHandler) GetAccountTransactionsSum(c *fiber.Ctx) error {
+	accountId := c.Params("accountId")
+	walletId := c.Params("walletId")
+	sum, err := h.services.Transaction.GetTransactionsSumByAccountID(walletId, accountId)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(sum))
 }

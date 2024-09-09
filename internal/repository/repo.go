@@ -1,9 +1,10 @@
 package repository
 
 type Repos struct {
-	Transaction TransactionRepo
-	Account     AccountRepo
-	Wallet      WalletRepo
-	Tier        TierRepo
-	User        UserRepo
+	Transaction  TransactionRepo
+	Account      AccountRepo
+	Wallet       WalletRepo
+	Tier         TierRepo
+	User         UserRepo
+	ExchangeRate ExchangeRateRepo
 }

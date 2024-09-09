@@ -6,12 +6,13 @@ import (
 )
 
 type AccountRepo interface {
-	CreateAccount(account *model.Account) error
-	GetAccountByUserID(userId string) (*model.Account, error)
-	GetAccountByID(accountId string) (*model.Account, error)
-	GetAccounts(page int, limit int) ([]model.Account, error)
-	GetTotalAccounts() (int64, error)
-	GetAccountsSum() (uint64, error)
+	CreateAccount(walletId string, account *model.Account) error
+	GetAccountByID(walletId string, accountId string) (*model.Account, error)
+	GetAccountByUserID(walletId string, userId string) (*model.Account, error)
+	GetAccounts(walletId string, page int, limit int) ([]model.Account, error)
+	GetTotalAccounts(walletId string) (int64, error)
+	GetAccountsSum(walletId string) (uint64, error)
+	DeleteAccount(walletId string, accountId string) error
 }
 
 type accountRepo struct {
@@ -22,51 +23,55 @@ func NewAccountRepo(db *gorm.DB) AccountRepo {
 	return &accountRepo{db: db}
 }
 
-func (r *accountRepo) CreateAccount(account *model.Account) error {
-	return r.db.Create(account).Error
+func (r *accountRepo) CreateAccount(walletId string, account *model.Account) error {
+	return r.db.Exec("SET search_path TO ?", walletId).Create(account).Error
 }
 
-func (r *accountRepo) GetAccountByUserID(userId string) (*model.Account, error) {
+func (r *accountRepo) GetAccountByUserID(walletId string, userId string) (*model.Account, error) {
 	var wallet model.Account
-	err := r.db.Where("user_id = ?", userId).First(&wallet).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Where("user_id = ?", userId).First(&wallet).Error
 	if err != nil {
 		return nil, err
 	}
 	return &wallet, nil
 }
 
-func (r *accountRepo) GetAccountByID(accountId string) (*model.Account, error) {
+func (r *accountRepo) GetAccountByID(walletId, accountId string) (*model.Account, error) {
 	var wallet model.Account
-	err := r.db.Where("id = ?", accountId).First(&wallet).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Where("id = ?", accountId).First(&wallet).Error
 	if err != nil {
 		return nil, err
 	}
 	return &wallet, nil
 }
 
-func (r *accountRepo) GetAccountsSum() (uint64, error) {
+func (r *accountRepo) GetAccountsSum(walletId string) (uint64, error) {
 	var sum uint64
-	err := r.db.Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
 	if err != nil {
 		return 0, err
 	}
 	return sum, nil
 }
 
-func (r *accountRepo) GetAccounts(page int, limit int) ([]model.Account, error) {
+func (r *accountRepo) GetAccounts(walletId string, page int, limit int) ([]model.Account, error) {
 	var wallets []model.Account
-	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
 	if err != nil {
 		return nil, err
 	}
 	return wallets, nil
 }
 
-func (r *accountRepo) GetTotalAccounts() (int64, error) {
+func (r *accountRepo) GetTotalAccounts(walletId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Account{}).Count(&total).Error
+	err := r.db.Exec("SET search_path TO ?", walletId).Model(&model.Account{}).Count(&total).Error
 	if err != nil {
 		return 0, err
 	}
 	return total, nil
+}
+
+func (r *accountRepo) DeleteAccount(walletId, accountId string) error {
+	return r.db.Exec("SET search_path TO ?", walletId).Where("id = ?", accountId).Delete(&model.Account{}).Error
 }

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS wallets
     points_expire_after INTERVAL, -- NULL means points never expire
     limit_per_user      BIGINT CHECK (limit_per_user >= 0),
     limit_global        BIGINT CHECK (limit_global >= 0),
+    is_monetary         BOOLEAN                 NOT NULL DEFAULT FALSE,
     updated_at          TIMESTAMP DEFAULT NOW() NOT NULL,
     created_at          TIMESTAMP DEFAULT NOW() NOT NULL
 );
@@ -28,16 +29,17 @@ CREATE TABLE IF NOT EXISTS users
     updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS conversion_rates
+CREATE TABLE IF NOT EXISTS exchange_rates
 (
-    from_wallet     TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
-    to_wallet       TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
-    tier_id         TEXT REFERENCES tiers (id) ON DELETE CASCADE,
-    conversion_rate NUMERIC                                        NOT NULL CHECK (conversion_rate > 0),
-    created_at      TIMESTAMP DEFAULT NOW()                        NOT NULL,
-    updated_at      TIMESTAMP DEFAULT NOW()                        NOT NULL,
-    PRIMARY KEY (from_wallet, to_wallet, tier_id),
-    CONSTRAINT check_different_wallets CHECK (from_wallet <> to_wallet)
+    id             SERIAL PRIMARY KEY,
+    from_wallet_id TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
+    to_wallet_id   TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
+    tier_id        TEXT REFERENCES tiers (id) ON DELETE CASCADE,
+    exchange_rate  numeric                                        NOT NULL CHECK (exchange_rate > 0),
+    created_at     TIMESTAMP DEFAULT NOW()                        NOT NULL,
+    updated_at     TIMESTAMP DEFAULT NOW()                        NOT NULL,
+    CONSTRAINT unique_from_to_tier UNIQUE (from_wallet_id, to_wallet_id, tier_id),
+    CONSTRAINT check_different_wallets CHECK (from_wallet_id <> to_wallet_id)
 );
 
 CREATE TABLE IF NOT EXISTS triggers

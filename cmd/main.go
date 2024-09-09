@@ -52,27 +52,33 @@ func main() {
 
 	// Define repositories
 	repos := &repository.Repos{
-		Account:     repository.NewAccountRepo(db),
-		Transaction: repository.NewTransactionRepo(db),
+		Account:      repository.NewAccountRepo(db),
+		Transaction:  repository.NewTransactionRepo(db),
+		Wallet:       repository.NewWalletRepo(db),
+		User:         repository.NewUserRepo(db),
+		Tier:         repository.NewTierRepo(db),
+		ExchangeRate: repository.NewExchangeRateRepo(db),
 	}
 
 	// Define services
 	services := &service.Services{
-		Wallet:      service.NewWalletService(repos),
-		Transaction: service.NewTransactionService(repos),
+		Wallet:       service.NewWalletService(repos),
+		Transaction:  service.NewTransactionService(repos),
+		Account:      service.NewAccountService(repos),
+		User:         service.NewUserService(repos),
+		Tier:         service.NewTierService(repos),
+		ExchangeRate: service.NewExchangeRateService(repos),
 	}
 
 	// Define versioned routes
 	v1 := app.Group("/v1")
-	walletGroup := v1.Group("/wallets")
 
-	// Define handlers
-	handler.NewV1WalletHandler(walletGroup, services)
-	handler.NewV1TierHandler(v1, services)
-	handler.NewV1UserHandler(v1, services)
-
+	handler.NewV1WalletHandler(v1, services)
 	handler.NewV1AccountHandler(v1, services)
 	handler.NewV1TransactionsHandler(v1, services)
+	handler.NewV1ExchangeRateHandler(v1, services)
+	handler.NewV1TierHandler(v1, services)
+	handler.NewV1UserHandler(v1, services)
 	handler.NewV1MainHandler(app, services)
 
 	// Undefined route handler

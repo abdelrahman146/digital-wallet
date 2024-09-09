@@ -12,10 +12,11 @@ type v1walletHandler struct {
 }
 
 func NewV1WalletHandler(appGroup fiber.Router, services *service.Services) {
+	group := appGroup.Group("/wallets")
 	handler := &v1walletHandler{
 		services: services,
 	}
-	handler.Setup(appGroup)
+	handler.Setup(group)
 }
 
 func (h *v1walletHandler) Setup(group fiber.Router) {

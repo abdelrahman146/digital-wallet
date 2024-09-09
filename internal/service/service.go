@@ -1,9 +1,10 @@
 package service
 
 type Services struct {
-	Transaction TransactionService
-	Account     AccountService
-	Wallet      WalletService
-	Tier        TierService
-	User        UserService
+	Transaction  TransactionService
+	Account      AccountService
+	Wallet       WalletService
+	Tier         TierService
+	User         UserService
+	ExchangeRate ExchangeRateService
 }

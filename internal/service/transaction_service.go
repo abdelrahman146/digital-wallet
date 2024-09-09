@@ -6,18 +6,14 @@ import (
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
 	"digital-wallet/pkg/validator"
-	"github.com/shopspring/decimal"
 )
 
 type TransactionService interface {
-	Deposit(req *DepositRequest, initiatedBy string) (*model.Transaction, error)
-	Withdraw(req *WithdrawRequest, initiatedBy string) (*model.Transaction, error)
-	Refund(req *RefundRequest, initiatedBy string) (*model.Transaction, error)
-	Purchase(req *PurchaseRequest, initiatedBy string) (*model.Transaction, error)
-	Transfer(req *TransferRequest, initiatedBy string) (*model.Transaction, error)
-	GetTransactionsByWalletID(walletId string, page int, limit int) (*api.List[model.Transaction], error)
-	GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error)
-	GetTransactionsSum() (decimal.Decimal, error)
+	CreateTransaction(walletId, accountId, actorType, actorId string, req *TransactionRequest) (*model.Transaction, error)
+	GetTransactionsByAccountID(walletId, accountId string, page int, limit int) (*api.List[model.Transaction], error)
+	GetTransactionsSumByAccountID(walletId, accountId string) (uint64, error)
+	GetTransactions(walletId string, page int, limit int) (*api.List[model.Transaction], error)
+	GetTransactionsSum(walletId string) (uint64, error)
 }
 
 type transactionService struct {
@@ -28,154 +24,99 @@ func NewTransactionService(repos *repository.Repos) TransactionService {
 	return &transactionService{repos: repos}
 }
 
-func (s *transactionService) Deposit(req *DepositRequest, initiatedBy string) (*model.Transaction, error) {
+func (s *transactionService) CreateTransaction(walletId, accountId, actorType, actorId string, req *TransactionRequest) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid deposit request", fields)
+		return nil, errs.NewValidationError("invalid transaction request", fields)
 	}
-	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
+	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	if wallet == nil {
+		return nil, errs.NewNotFoundError("wallet not found", nil)
+	}
+	account, _ := s.repos.Account.GetAccountByID(walletId, accountId)
+	if account == nil {
+		return nil, errs.NewNotFoundError("account not found", nil)
 	}
 	transaction := &model.Transaction{
-		WalletID:      wallet.ID,
-		Amount:        decimal.NewFromFloat(req.Amount),
-		Type:          model.TransactionTypeDeposit,
-		ReferenceID:   &req.PaymentTransactionId,
-		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
-		InitiatedBy:   initiatedBy,
+		AccountID: accountId,
+		Amount:    req.Amount,
+		ActorType: actorType,
+		ActorID:   actorId,
+		Metadata:  req.Metadata,
+		ProgramID: req.ProgramID,
 	}
-	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
-		return nil, errs.NewBadRequestError("failed to deposit", err)
+	switch req.Type {
+	case model.TransactionTypeCredit:
+		transaction.Type = model.TransactionTypeCredit
+	case model.TransactionTypeDebit:
+		transaction.Type = model.TransactionTypeDebit
+	}
+	if err := s.repos.Transaction.Create(walletId, transaction, account.Version); err != nil {
+		return nil, errs.NewInternalError("failed to create transaction", err)
 	}
 	return transaction, nil
 }
 
-func (s *transactionService) Withdraw(req *WithdrawRequest, initiatedBy string) (*model.Transaction, error) {
-	if err := validator.GetValidator().ValidateStruct(req); err != nil {
-		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid withdraw request", fields)
+func (s *transactionService) GetTransactionsByAccountID(walletId, accountId string, page int, limit int) (*api.List[model.Transaction], error) {
+	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	if wallet == nil {
+		return nil, errs.NewNotFoundError("wallet not found", nil)
 	}
-	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
+	account, _ := s.repos.Account.GetAccountByID(walletId, accountId)
+	if account == nil {
+		return nil, errs.NewNotFoundError("account not found", nil)
 	}
-	transaction := &model.Transaction{
-		WalletID:      wallet.ID,
-		Amount:        decimal.NewFromFloat(req.Amount),
-		Type:          model.TransactionTypeWithdraw,
-		ReferenceID:   &req.PaymentTransactionId,
-		ReferenceType: &model.TransactionReferenceTypeBankTransaction,
-		InitiatedBy:   initiatedBy,
-	}
-	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
-		return nil, errs.NewBadRequestError("failed to withdraw", err)
-	}
-	return transaction, nil
-}
-
-func (s *transactionService) Refund(req *RefundRequest, initiatedBy string) (*model.Transaction, error) {
-	if err := validator.GetValidator().ValidateStruct(req); err != nil {
-		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid refund request", fields)
-	}
-	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
-	}
-	transaction := &model.Transaction{
-		WalletID:      wallet.ID,
-		Amount:        decimal.NewFromFloat(req.Amount),
-		Type:          model.TransactionTypeRefund,
-		ReferenceID:   &req.OrderId,
-		ReferenceType: &model.TransactionReferenceTypeOrder,
-		InitiatedBy:   initiatedBy,
-	}
-	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
-		return nil, errs.NewBadRequestError("failed to refund", err)
-	}
-	return transaction, nil
-}
-
-func (s *transactionService) Purchase(req *PurchaseRequest, initiatedBy string) (*model.Transaction, error) {
-	if err := validator.GetValidator().ValidateStruct(req); err != nil {
-		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid purchase request", fields)
-	}
-	wallet, err := s.repos.Account.GetAccountByUserID(req.UserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
-	}
-	transaction := &model.Transaction{
-		WalletID:      wallet.ID,
-		Amount:        decimal.NewFromFloat(req.Amount),
-		Type:          model.TransactionTypePurchase,
-		ReferenceID:   &req.OrderId,
-		ReferenceType: &model.TransactionReferenceTypeOrder,
-		InitiatedBy:   initiatedBy,
-	}
-	if err = s.repos.Transaction.Create(transaction, wallet.Version); err != nil {
-		return nil, errs.NewBadRequestError("failed to purchase", err)
-	}
-	return transaction, nil
-}
-
-func (s *transactionService) Transfer(req *TransferRequest, initiatedBy string) (*model.Transaction, error) {
-	if err := validator.GetValidator().ValidateStruct(req); err != nil {
-		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid transfer request", fields)
-	}
-	fromWallet, err := s.repos.Account.GetAccountByUserID(req.FromUserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("from wallet not found", err)
-	}
-	toWallet, err := s.repos.Account.GetAccountByUserID(req.ToUserID)
-	if err != nil {
-		return nil, errs.NewNotFoundError("to wallet not found", err)
-	}
-	transactionOut := &model.Transaction{
-		WalletID:    fromWallet.ID,
-		Amount:      decimal.NewFromFloat(req.Amount).Neg(),
-		Type:        model.TransactionTypeTransferOut,
-		InitiatedBy: initiatedBy,
-	}
-	transactionIn := &model.Transaction{
-		WalletID:      toWallet.ID,
-		Amount:        decimal.NewFromFloat(req.Amount),
-		Type:          model.TransactionTypeTransferIn,
-		ReferenceType: &model.TransactionReferenceTypeTransfer,
-		InitiatedBy:   initiatedBy,
-	}
-	if err = s.repos.Transaction.Transfer(transactionOut, fromWallet.Version, transactionIn, toWallet.Version); err != nil {
-		return nil, errs.NewBadRequestError("failed to transfer", err)
-	}
-	return transactionOut, nil
-}
-
-func (s *transactionService) GetTransactionsByWalletID(walletId string, page int, limit int) (*api.List[model.Transaction], error) {
-	transactions, err := s.repos.Transaction.GetTransactionsByAccountID(walletId, page, limit)
+	transactions, err := s.repos.Transaction.GetTransactionsByAccountID(walletId, accountId, page, limit)
 	if err != nil {
 		return nil, errs.NewInternalError("failed to get transactions", err)
 	}
-	total, err := s.repos.Transaction.GetTotalTransactionsByAccountID(walletId)
+	total, err := s.repos.Transaction.GetTotalTransactionsByAccountID(walletId, accountId)
 	if err != nil {
 		return nil, errs.NewInternalError("failed to get total transactions", err)
 	}
 	return &api.List[model.Transaction]{Items: transactions, Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *transactionService) GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error) {
-	sum, err := s.repos.Transaction.GetTransactionsSumByAccountID(walletId)
+func (s *transactionService) GetTransactionsSumByAccountID(walletId, accountId string) (uint64, error) {
+	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	if wallet == nil {
+		return 0, errs.NewNotFoundError("wallet not found", nil)
+	}
+	account, _ := s.repos.Account.GetAccountByID(walletId, accountId)
+	if account == nil {
+		return 0, errs.NewNotFoundError("account not found", nil)
+	}
+	sum, err := s.repos.Transaction.GetTransactionsSumByAccountID(walletId, accountId)
 	if err != nil {
-		return decimal.Zero, errs.NewInternalError("failed to get transactions sum", err)
+		return 0, errs.NewInternalError("failed to get transactions sum", err)
 	}
 	return sum, nil
 }
 
-func (s *transactionService) GetTransactionsSum() (decimal.Decimal, error) {
-	sum, err := s.repos.Transaction.GetTransactionsSum()
+func (s *transactionService) GetTransactions(walletId string, page int, limit int) (*api.List[model.Transaction], error) {
+	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	if wallet == nil {
+		return nil, errs.NewNotFoundError("wallet not found", nil)
+	}
+	transactions, err := s.repos.Transaction.GetTransactions(walletId, page, limit)
 	if err != nil {
-		return decimal.Zero, errs.NewInternalError("failed to get transactions sum", err)
+		return nil, errs.NewInternalError("failed to get transactions", err)
+	}
+	total, err := s.repos.Transaction.GetTotalTransactions(walletId)
+	if err != nil {
+		return nil, errs.NewInternalError("failed to get total transactions", err)
+	}
+	return &api.List[model.Transaction]{Items: transactions, Page: page, Limit: limit, Total: total}, nil
+}
+
+func (s *transactionService) GetTransactionsSum(walletId string) (uint64, error) {
+	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	if wallet == nil {
+		return 0, errs.NewNotFoundError("wallet not found", nil)
+	}
+	sum, err := s.repos.Transaction.GetTransactionsSum(walletId)
+	if err != nil {
+		return 0, errs.NewInternalError("failed to get transactions sum", err)
 	}
 	return sum, nil
 }
