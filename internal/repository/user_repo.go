@@ -77,7 +77,6 @@ func (r *userRepo) GetUsersList(users []model.User) ([]model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Create a map of user IDs to their accounts
 	accountsMap := make(map[string][]model.Account)
 	for _, account := range accounts {
@@ -123,7 +122,7 @@ func (r *userRepo) GetUsersByTierID(tierId string, page int, limit int) ([]model
 	var users []model.User
 
 	// Fetch the users who belong to the specified tier
-	err := r.db.Where("tier_id = ?", tierId).Offset((page - 1) * limit).Limit(page).Find(&users).Error
+	err := r.db.Where("tier_id = ?", tierId).Offset((page - 1) * limit).Limit(limit).Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +166,7 @@ func (r *userRepo) GetTotalUsersByTierID(tierId string) (int64, error) {
 func (r *userRepo) GetUsers(page int, limit int) ([]model.User, error) {
 	var users []model.User
 
-	err := r.db.Offset((page - 1) * limit).Limit(page).Find(&users).Error
+	err := r.db.Offset((page - 1) * limit).Limit(limit).Find(&users).Error
 	if err != nil {
 		return nil, err
 	}

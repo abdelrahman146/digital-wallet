@@ -89,6 +89,12 @@ func (r *transactionRepo) Create(walletId string, transaction *model.Transaction
 		transaction.NewBalance = account.Balance
 		transaction.Version = account.Version
 
+		// create transaction id
+		if err := tx.Raw("SELECT generate_transaction_id(?);", walletId).Scan(&transaction.ID).Error; err != nil {
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			return err
+		}
+
 		if err := tx.Create(transaction).Error; err != nil {
 			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err

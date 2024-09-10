@@ -25,6 +25,9 @@ func NewAccountRepo(db *gorm.DB) AccountRepo {
 }
 
 func (r *accountRepo) CreateAccount(walletId string, account *model.Account) error {
+	if err := r.db.Raw("SELECT generate_account_id(?);", walletId).Scan(&account.ID).Error; err != nil {
+		return err
+	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Create(account).Error
 	})

@@ -127,6 +127,18 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 		from.Transaction.NewBalance = fromAccount.Balance
 		from.Transaction.Version = fromAccount.Version
 
+		// create transaction id
+		if err := tx.Raw("SELECT generate_transaction_id(?);", from.WalletID).Scan(&from.Transaction.ID).Error; err != nil {
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			return err
+		}
+
+		// create transaction id
+		if err := tx.Raw("SELECT generate_transaction_id(?);", to.WalletID).Scan(&to.Transaction.ID).Error; err != nil {
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			return err
+		}
+
 		if err := tx.Create(from.Transaction).Error; err != nil {
 			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err

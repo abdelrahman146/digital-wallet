@@ -6,6 +6,7 @@ import (
 
 type Account struct {
 	ID        string    `gorm:"column:id;primaryKey" json:"id"`
+	Wallet    string    `gorm:"-" json:"wallet,omitempty"`
 	UserID    string    `gorm:"column:user_id" json:"userId"`
 	Balance   uint64    `gorm:"column:balance;" json:"balance"`
 	Version   uint64    `gorm:"column:version" json:"version"`
