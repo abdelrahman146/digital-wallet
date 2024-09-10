@@ -29,7 +29,10 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 
 func (r *transactionRepo) GetTransactionsByAccountID(walletId, accountId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Where("account_id = ?", accountId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	//err := r.db.Transaction(func(tx *gorm.DB) error {})
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Where("account_id = ?", accountId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	})
 	if err != nil {
 		logger.GetLogger().Error("Error while fetching transactions by account id", logger.Field("error", err))
 		return nil, err
@@ -39,7 +42,9 @@ func (r *transactionRepo) GetTransactionsByAccountID(walletId, accountId string,
 
 func (r *transactionRepo) GetTotalTransactionsByAccountID(walletId, accountId string) (int64, error) {
 	var total int64
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
+	})
 	if err != nil {
 		logger.GetLogger().Error("Error while fetching total transactions by account id", logger.Field("error", err))
 		return 0, err
@@ -48,8 +53,14 @@ func (r *transactionRepo) GetTotalTransactionsByAccountID(walletId, accountId st
 }
 
 func (r *transactionRepo) Create(walletId string, transaction *model.Transaction, accountVersion uint64) error {
-	return r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Transaction(func(tx *gorm.DB) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
 		var account model.Account
+
+		// Set the schema search path
+		if err := tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Error; err != nil {
+			logger.GetLogger().Error("Error while setting search path", logger.Field("error", err))
+			return err
+		}
 
 		// Lock the account
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.AccountID).First(&account).Error; err != nil {
@@ -94,7 +105,9 @@ func (r *transactionRepo) Create(walletId string, transaction *model.Transaction
 
 func (r *transactionRepo) GetTransactionsSumByAccountID(walletId, accountId string) (uint64, error) {
 	var sum float64
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -103,7 +116,9 @@ func (r *transactionRepo) GetTransactionsSumByAccountID(walletId, accountId stri
 
 func (r *transactionRepo) GetTransactionsSum(walletId string) (uint64, error) {
 	var sum uint64
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +127,9 @@ func (r *transactionRepo) GetTransactionsSum(walletId string) (uint64, error) {
 
 func (r *transactionRepo) GetTransactions(walletId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +138,9 @@ func (r *transactionRepo) GetTransactions(walletId string, page int, limit int) 
 
 func (r *transactionRepo) GetTotalTransactions(walletId string) (int64, error) {
 	var total int64
-	err := r.db.Exec("SET search_path TO ?", fmt.Sprintf("%s_wallet", walletId)).Model(&model.Transaction{}).Count(&total).Error
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Transaction{}).Count(&total).Error
+	})
 	if err != nil {
 		return 0, err
 	}
