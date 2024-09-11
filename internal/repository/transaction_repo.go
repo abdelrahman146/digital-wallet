@@ -5,18 +5,18 @@ import (
 	"digital-wallet/pkg/errs"
 	"digital-wallet/pkg/logger"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type TransactionRepo interface {
-	GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error)
-	GetTotalTransactionsByWalletID(walletId string) (int64, error)
-	Create(transaction *model.Transaction, walletVersion int64) error
-	Transfer(from *model.Transaction, fromWalletVersion int64, to *model.Transaction, toWalletVersion int64) error
-	GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error)
-	GetTransactionsSum() (decimal.Decimal, error)
+	GetTransactionsByAccountID(walletId, accountId string, page int, limit int) ([]model.Transaction, error)
+	GetTotalTransactionsByAccountID(walletId, accountId string) (int64, error)
+	GetTransactions(walletId string, page int, limit int) ([]model.Transaction, error)
+	GetTotalTransactions(walletId string) (int64, error)
+	Create(walletId string, transaction *model.Transaction, accountVersion uint64) error
+	GetTransactionsSumByAccountID(walletId string, accountId string) (uint64, error)
+	GetTransactionsSum(walletId string) (uint64, error)
 }
 
 type transactionRepo struct {
@@ -27,59 +27,73 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepo {
 	return &transactionRepo{db: db}
 }
 
-func (r *transactionRepo) GetTransactionsByWalletID(walletId string, page int, limit int) ([]model.Transaction, error) {
+func (r *transactionRepo) GetTransactionsByAccountID(walletId, accountId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("wallet_id = ?", walletId).Order("version desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
+	var transaction model.Transaction
+	//err := r.db.Transaction(func(tx *gorm.DB) error {})
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Where("account_id = ?", accountId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
-		logger.GetLogger().Error("Error while fetching transactions by wallet id", logger.Field("error", err))
+		logger.GetLogger().Error("Error while fetching transactions by account id", logger.Field("error", err))
 		return nil, err
 	}
 	return transactions, nil
 }
 
-func (r *transactionRepo) GetTotalTransactionsByWalletID(walletId string) (int64, error) {
+func (r *transactionRepo) GetTotalTransactionsByAccountID(walletId, accountId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).Count(&total).Error
+	transaction := &model.Transaction{}
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s"), transaction.TableName()).Model(transaction).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
-		logger.GetLogger().Error("Error while fetching total transactions by wallet id", logger.Field("error", err))
+		logger.GetLogger().Error("Error while fetching total transactions by account id", logger.Field("error", err))
 		return 0, err
 	}
 	return total, nil
 }
 
-func (r *transactionRepo) Create(transaction *model.Transaction, walletVersion int64) error {
+func (r *transactionRepo) Create(walletId string, transaction *model.Transaction, accountVersion uint64) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		var wallet model.Wallet
+		var account model.Account
 
-		// Lock the wallet
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.WalletID).First(&wallet).Error; err != nil {
-			logger.GetLogger().Error("Error while fetching wallet by id", logger.Field("error", err))
+		// Lock the account
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.AccountID).First(&account).Error; err != nil {
+			logger.GetLogger().Error("Error while fetching account by id", logger.Field("error", err))
 			return err
 		}
 
 		// optimistic locking
-		if wallet.Version != walletVersion {
-			return errs.NewConflictError(fmt.Sprintf("wallet %s has been modified by another transaction", wallet.ID), nil)
+		if account.Version != accountVersion {
+			return errs.NewConflictError(fmt.Sprintf("account %s has been modified by another transaction", account.ID), nil)
 		}
 
-		// check if wallet has sufficient balance
-		if wallet.Balance.Add(transaction.Amount).LessThan(decimal.NewFromFloat(0)) {
+		// check if account has sufficient balance
+		if transaction.Type == model.TransactionTypeDebit && account.Balance < transaction.Amount {
 			return errs.NewNotAcceptableError("insufficient balance", nil)
 		}
 
-		transaction.PreviousBalance = wallet.Balance
-		wallet.Balance = wallet.Balance.Add(transaction.Amount)
-		wallet.Version++
-		transaction.NewBalance = wallet.Balance
-		transaction.Version = wallet.Version
+		transaction.PreviousBalance = account.Balance
+		switch transaction.Type {
+		case model.TransactionTypeDebit:
+			account.Balance = account.Balance - transaction.Amount
+		case model.TransactionTypeCredit:
+			account.Balance = account.Balance + transaction.Amount
+		}
+		account.Version++
+		transaction.NewBalance = account.Balance
+		transaction.Version = account.Version
 
-		if err := tx.Create(transaction).Error; err != nil {
+		// create transaction id
+		if err := tx.Raw("SELECT generate_transaction_id(?);", walletId).Scan(&transaction.ID).Error; err != nil {
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			return err
+		}
+
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Create(transaction).Error; err != nil {
 			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err
 		}
 
-		if err := tx.Save(&wallet).Error; err != nil {
-			logger.GetLogger().Error("Error while saving wallet", logger.Field("error", err))
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Save(&account).Error; err != nil {
+			logger.GetLogger().Error("Error while saving account", logger.Field("error", err))
 			return err
 		}
 
@@ -87,78 +101,51 @@ func (r *transactionRepo) Create(transaction *model.Transaction, walletVersion i
 	})
 }
 
-func (r *transactionRepo) Transfer(from *model.Transaction, fromWalletVersion int64, to *model.Transaction, toWalletVersion int64) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var fromWallet, toWallet model.Wallet
-
-		// Lock the wallets
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", from.WalletID).First(&fromWallet).Error; err != nil {
-			return err
-		}
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", to.WalletID).First(&toWallet).Error; err != nil {
-			return err
-		}
-
-		// optimistic locking
-		if fromWallet.Version != fromWalletVersion {
-			return errs.NewConflictError(fmt.Sprintf("sender wallet %s has been modified by another transaction", fromWallet.ID), nil)
-		}
-		if toWallet.Version != toWalletVersion {
-			return errs.NewConflictError(fmt.Sprintf("receiver wallet %s has been modified by another transaction", toWallet.ID), nil)
-		}
-
-		// check if from wallet has sufficient balance
-		if fromWallet.Balance.Add(from.Amount).LessThan(decimal.NewFromFloat(0)) {
-			return errs.NewNotAcceptableError("insufficient balance", nil)
-		}
-
-		from.PreviousBalance = fromWallet.Balance
-		fromWallet.Balance = fromWallet.Balance.Add(from.Amount)
-		fromWallet.Version++
-		from.NewBalance = fromWallet.Balance
-
-		to.PreviousBalance = toWallet.Balance
-		toWallet.Balance = toWallet.Balance.Add(to.Amount)
-		toWallet.Version++
-		to.NewBalance = toWallet.Balance
-
-		if err := tx.Create(from).Error; err != nil {
-			return err
-		}
-
-		to.ReferenceID = &from.ID
-		if err := tx.Create(to).Error; err != nil {
-			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
-			return err
-		}
-
-		if err := tx.Save(&fromWallet).Error; err != nil {
-			logger.GetLogger().Error("Error while saving from wallet", logger.Field("error", err))
-			return err
-		}
-
-		if err := tx.Save(&toWallet).Error; err != nil {
-			logger.GetLogger().Error("Error while saving to wallet", logger.Field("error", err))
-			return err
-		}
-		return nil
-	})
+func (r *transactionRepo) GetTransactionsSumByAccountID(walletId, accountId string) (uint64, error) {
+	var sum float64
+	transaction := &model.Transaction{}
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
+	if err != nil {
+		return 0, err
+	}
+	return 0, nil
 }
 
-func (r *transactionRepo) GetTransactionsSumByWalletID(walletId string) (decimal.Decimal, error) {
-	var sum float64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("wallet_id = ?", walletId).Scan(&sum).Error
-	if err != nil {
-		return decimal.Zero, err
+func (r *transactionRepo) GetTransactionsSum(walletId string) (uint64, error) {
+	var sum uint64
+	var res []struct {
+		Type string
+		Sum  uint64
 	}
-	return decimal.NewFromFloat(sum), nil
+	transaction := &model.Transaction{}
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Select("type, COALESCE(SUM(amount), 0) as sum").Group("type").Scan(&res).Error
+	mappedRes := make(map[string]uint64)
+	for _, r := range res {
+		mappedRes[r.Type] = r.Sum
+	}
+	sum = mappedRes[model.TransactionTypeCredit] - mappedRes[model.TransactionTypeDebit]
+	if err != nil {
+		return 0, err
+	}
+	return sum, nil
 }
 
-func (r *transactionRepo) GetTransactionsSum() (decimal.Decimal, error) {
-	var sum float64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+func (r *transactionRepo) GetTransactions(walletId string, page int, limit int) ([]model.Transaction, error) {
+	var transactions []model.Transaction
+	var transaction model.Transaction
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
-		return decimal.Zero, err
+		return nil, err
 	}
-	return decimal.NewFromFloat(sum), nil
+	return transactions, nil
+}
+
+func (r *transactionRepo) GetTotalTransactions(walletId string) (int64, error) {
+	var total int64
+	transaction := &model.Transaction{}
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
 }

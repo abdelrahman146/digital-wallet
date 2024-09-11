@@ -1,14 +1,33 @@
-DROP TABLE IF EXISTS transactions_2024_q4;
+-- Function to delete wallet schemas on deletion
+CREATE OR REPLACE FUNCTION drop_wallet_schema(id TEXT) RETURNS VOID AS $$
+BEGIN
+EXECUTE 'DROP SCHEMA IF EXISTS ' || id || '_wallet CASCADE';
+END;
+$$ LANGUAGE plpgsql;
 
-DROP INDEX IF EXISTS transactions_created_at_idx;
-DROP INDEX IF EXISTS transactions_wallet_id_idx;
+-- Drop Wallets table and cascading schemas
+DO $$
+DECLARE
+r RECORD;
+BEGIN
+    -- Iterate over existing wallet schemas and drop them
+FOR r IN (SELECT id FROM wallets) LOOP
+        PERFORM drop_wallet_schema(r.id);
+END LOOP;
+    -- Drop wallets table itself
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS triggers CASCADE;
+DROP TABLE IF EXISTS exchange_rates CASCADE;
+DROP TABLE IF EXISTS tiers CASCADE;
+DROP TABLE IF EXISTS wallets CASCADE;
+END $$;
 
-DROP TABLE IF EXISTS transactions;
+-- Drop account and transaction ID generators
+DROP FUNCTION IF EXISTS generate_account_id;
+DROP FUNCTION IF EXISTS generate_transaction_id;
+
+DROP FUNCTION IF EXISTS create_wallet_schema;
+DROP FUNCTION IF EXISTS drop_wallet_schema;
 
 DROP TYPE IF EXISTS transaction_type;
-DROP TYPE IF EXISTS initiator_type;
-DROP TYPE IF EXISTS reference_type;
-
-DROP INDEX IF EXISTS balances_owner_id_idx;
-
-DROP TABLE IF EXISTS wallets;
+DROP TYPE IF EXISTS transaction_actor_type;
