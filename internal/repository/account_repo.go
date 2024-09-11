@@ -28,38 +28,31 @@ func (r *accountRepo) CreateAccount(walletId string, account *model.Account) err
 	if err := r.db.Raw("SELECT generate_account_id(?);", walletId).Scan(&account.ID).Error; err != nil {
 		return err
 	}
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Create(account).Error
-	})
+	return r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Create(account).Error
 }
 
 func (r *accountRepo) GetAccountByUserID(walletId string, userId string) (*model.Account, error) {
-	var wallet model.Account
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Where("user_id = ?", userId).First(&wallet).Error
-	})
+	var account model.Account
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("user_id = ?", userId).First(&account).Error
 	if err != nil {
 		return nil, err
 	}
-	return &wallet, nil
+	return &account, nil
 }
 
 func (r *accountRepo) GetAccountByID(walletId, accountId string) (*model.Account, error) {
-	var wallet model.Account
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Where("id = ?", accountId).First(&wallet).Error
-	})
+	var account model.Account
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("id = ?", accountId).First(&account).Error
 	if err != nil {
 		return nil, err
 	}
-	return &wallet, nil
+	return &account, nil
 }
 
 func (r *accountRepo) GetAccountsSum(walletId string) (uint64, error) {
 	var sum uint64
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
-	})
+	var account model.Account
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
 	if err != nil {
 		return 0, err
 	}
@@ -67,21 +60,19 @@ func (r *accountRepo) GetAccountsSum(walletId string) (uint64, error) {
 }
 
 func (r *accountRepo) GetAccounts(walletId string, page int, limit int) ([]model.Account, error) {
-	var wallets []model.Account
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
-	})
+	var accounts []model.Account
+	var account model.Account
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&accounts).Error
 	if err != nil {
 		return nil, err
 	}
-	return wallets, nil
+	return accounts, nil
 }
 
 func (r *accountRepo) GetTotalAccounts(walletId string) (int64, error) {
 	var total int64
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Model(&model.Account{}).Count(&total).Error
-	})
+	account := &model.Account{}
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Model(&model.Account{}).Count(&total).Error
 	if err != nil {
 		return 0, err
 	}
@@ -89,7 +80,6 @@ func (r *accountRepo) GetTotalAccounts(walletId string) (int64, error) {
 }
 
 func (r *accountRepo) DeleteAccount(walletId, accountId string) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Exec(fmt.Sprintf("SET search_path TO %s_wallet", walletId)).Where("id = ?", accountId).Delete(&model.Account{}).Error
-	})
+	account := &model.Account{}
+	return r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("id = ?", accountId).Delete(account).Error
 }

@@ -100,15 +100,8 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		fromAccount := &model.Account{}
 
-		// set schema to from wallet
-		if err := tx.Exec("SET search_path TO ?", from.WalletID).Error; err != nil {
-			logger.GetLogger().Error("Error while setting search path", logger.Field("error", err))
-			return err
-		}
-
 		// lock update on from account
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", from.Transaction.AccountID).First(fromAccount).Error; err != nil {
-			logger.GetLogger().Error("Error while fetching account by id", logger.Field("error", err))
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, fromAccount.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", from.Transaction.AccountID).First(fromAccount).Error; err != nil {
 			return err
 		}
 
@@ -133,32 +126,20 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 			return err
 		}
 
-		// create transaction id
-		if err := tx.Raw("SELECT generate_transaction_id(?);", to.WalletID).Scan(&to.Transaction.ID).Error; err != nil {
-			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
-			return err
-		}
-
-		if err := tx.Create(from.Transaction).Error; err != nil {
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, from.Transaction.TableName())).Create(from.Transaction).Error; err != nil {
 			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err
 		}
 
-		if err := tx.Save(fromAccount).Error; err != nil {
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, fromAccount.TableName())).Save(fromAccount).Error; err != nil {
 			logger.GetLogger().Error("Error while saving account", logger.Field("error", err))
-			return err
-		}
-
-		// switch schema
-		if err := tx.Exec("SET search_path TO ?", to.WalletID).Error; err != nil {
-			logger.GetLogger().Error("Error while setting search path", logger.Field("error", err))
 			return err
 		}
 
 		toAccount := &model.Account{}
 
 		// lock update on to account
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", to.Transaction.AccountID).First(toAccount).Error; err != nil {
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", to.WalletID, toAccount.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", to.Transaction.AccountID).First(toAccount).Error; err != nil {
 			logger.GetLogger().Error("Error while fetching account by id", logger.Field("error", err))
 			return err
 		}
@@ -174,12 +155,18 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 		to.Transaction.NewBalance = toAccount.Balance
 		to.Transaction.Version = toAccount.Version
 
-		if err := tx.Create(to.Transaction).Error; err != nil {
+		// create transaction id
+		if err := tx.Raw("SELECT generate_transaction_id(?);", to.WalletID).Scan(&to.Transaction.ID).Error; err != nil {
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			return err
+		}
+
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", to.WalletID, to.Transaction.TableName())).Create(to.Transaction).Error; err != nil {
 			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
 			return err
 		}
 
-		if err := tx.Save(toAccount).Error; err != nil {
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", to.WalletID, toAccount.TableName())).Save(toAccount).Error; err != nil {
 			logger.GetLogger().Error("Error while saving account", logger.Field("error", err))
 			return err
 		}
