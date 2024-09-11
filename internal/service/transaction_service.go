@@ -46,9 +46,9 @@ func (s *transactionService) CreateTransaction(walletId, accountId, actorType, a
 		ProgramID: req.ProgramID,
 	}
 	switch req.Type {
-	case model.TransactionTypeCredit:
+	case "credit":
 		transaction.Type = model.TransactionTypeCredit
-	case model.TransactionTypeDebit:
+	case "debit":
 		transaction.Type = model.TransactionTypeDebit
 	}
 	if err := s.repos.Transaction.Create(walletId, transaction, account.Version); err != nil {

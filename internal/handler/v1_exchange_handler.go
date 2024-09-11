@@ -21,12 +21,12 @@ func NewV1ExchangeRateHandler(appGroup fiber.Router, services *service.Services)
 }
 
 func (h *v1ExchangeRateHandler) Setup(group fiber.Router) {
-	group.Post("wallets/exchangeRates", h.CreateExchangeRate)
-	group.Get("/exchangeRates", h.GetExchangeRates)
-	group.Get("/wallets/:walletId/exchangeRates", h.GetExchangeRatesByWalletID)
+	group.Post("wallets/exchange-rates", h.CreateExchangeRate)
+	group.Get("/exchange-rates", h.GetExchangeRates)
+	group.Get("/wallets/:walletId/exchange-rates", h.GetExchangeRatesByWalletID)
 	group.Post("wallets/:walletId/exchange", h.Exchange)
-	group.Put("/:exchangeRateId", h.UpdateExchangeRate)
-	group.Delete("/:exchangeRateId", h.DeleteExchangeRate)
+	group.Put("wallets/exchange-rates/:exchangeRateId", h.UpdateExchangeRate)
+	group.Delete("wallets/exchange-rates/:exchangeRateId", h.DeleteExchangeRate)
 }
 
 func (h *v1ExchangeRateHandler) CreateExchangeRate(c *fiber.Ctx) error {
@@ -50,7 +50,7 @@ func (h *v1ExchangeRateHandler) GetExchangeRates(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusOK).JSON(exchangeRates)
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(exchangeRates))
 }
 
 func (h *v1ExchangeRateHandler) GetExchangeRatesByWalletID(c *fiber.Ctx) error {
@@ -63,7 +63,7 @@ func (h *v1ExchangeRateHandler) GetExchangeRatesByWalletID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusOK).JSON(exchangeRates)
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(exchangeRates))
 }
 
 func (h *v1ExchangeRateHandler) UpdateExchangeRate(c *fiber.Ctx) error {
@@ -93,9 +93,9 @@ func (h *v1ExchangeRateHandler) DeleteExchangeRate(c *fiber.Ctx) error {
 func (h *v1ExchangeRateHandler) Exchange(c *fiber.Ctx) error {
 	fromWalletId := c.Params("walletId")
 	var req struct {
-		ToWalletID string `json:"toWalletId" validate:"required"`
-		UserID     string `json:"userId" validate:"required"`
-		Amount     uint64 `json:"amount" validate:"required"`
+		ToWalletID string `json:"toWalletId,omitempty" validate:"required"`
+		UserID     string `json:"userId,omitempty" validate:"required"`
+		Amount     uint64 `json:"amount,omitempty" validate:"required,gt=0"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return errs.NewBadRequestError("invalid request", err)

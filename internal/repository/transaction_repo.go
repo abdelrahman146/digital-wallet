@@ -55,7 +55,7 @@ func (r *transactionRepo) Create(walletId string, transaction *model.Transaction
 		var account model.Account
 
 		// Lock the account
-		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.AccountID).First(&account).Error; err != nil {
+		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", transaction.AccountID).First(&account).Error; err != nil {
 			logger.GetLogger().Error("Error while fetching account by id", logger.Field("error", err))
 			return err
 		}
@@ -113,8 +113,17 @@ func (r *transactionRepo) GetTransactionsSumByAccountID(walletId, accountId stri
 
 func (r *transactionRepo) GetTransactionsSum(walletId string) (uint64, error) {
 	var sum uint64
+	var res []struct {
+		Type string
+		Sum  uint64
+	}
 	transaction := &model.Transaction{}
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Select("COALESCE(SUM(amount), 0)").Scan(&sum).Error
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Select("type, COALESCE(SUM(amount), 0) as sum").Group("type").Scan(&res).Error
+	mappedRes := make(map[string]uint64)
+	for _, r := range res {
+		mappedRes[r.Type] = r.Sum
+	}
+	sum = mappedRes[model.TransactionTypeCredit] - mappedRes[model.TransactionTypeDebit]
 	if err != nil {
 		return 0, err
 	}
@@ -134,7 +143,7 @@ func (r *transactionRepo) GetTransactions(walletId string, page int, limit int) 
 func (r *transactionRepo) GetTotalTransactions(walletId string) (int64, error) {
 	var total int64
 	transaction := &model.Transaction{}
-	err := r.db.Table("%s_wallet.%s", walletId, transaction.TableName()).Model(transaction).Count(&total).Error
+	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, transaction.TableName())).Model(transaction).Count(&total).Error
 	if err != nil {
 		return 0, err
 	}
