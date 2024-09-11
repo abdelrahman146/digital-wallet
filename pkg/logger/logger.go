@@ -16,7 +16,7 @@ type Logger interface {
 	Warn(msg string, fields ...F)
 	Error(msg string, fields ...F)
 	Panic(msg string, fields ...F)
-	AddField(key, value string)
+	AddRequestID(key, value string)
 }
 
 var (
@@ -32,7 +32,7 @@ func initLogger(l Logger) {
 
 func GetLogger() Logger {
 	if logger == nil {
-		zap, err := newZapLogger(zapcore.DebugLevel, "digital-wallet")
+		zap, err := newZapLogger(zapcore.DebugLevel)
 		if err != nil {
 			panic(err)
 		}

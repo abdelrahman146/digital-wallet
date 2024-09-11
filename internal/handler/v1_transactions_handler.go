@@ -33,7 +33,7 @@ func (h *v1TransactionsHandler) GetTransactions(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusOK).JSON(transactions)
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
 }
 
 func (h *v1TransactionsHandler) GetTransactionsSum(c *fiber.Ctx) error {
@@ -42,5 +42,5 @@ func (h *v1TransactionsHandler) GetTransactionsSum(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Status(fiber.StatusOK).JSON(sum)
+	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(sum))
 }

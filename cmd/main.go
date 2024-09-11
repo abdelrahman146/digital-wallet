@@ -45,6 +45,11 @@ func main() {
 		Expiration: 10 * time.Second,
 	}))
 	app.Use(requestid.New())
+	app.Use(func(c *fiber.Ctx) error {
+		requestId := c.Locals("requestid").(string)
+		logger.GetLogger().AddRequestID("requestId", requestId)
+		return c.Next()
+	})
 	app.Get("/metrics", monitor.New())
 	app.Use(fiberLogger.New(fiberLogger.Config{
 		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",

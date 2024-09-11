@@ -6,14 +6,22 @@ import (
 )
 
 type zapLogger struct {
-	logger  *zap.Logger
-	service string
+	logger *zap.Logger
+	level  zapcore.Level
 }
 
-func newZapLogger(level zapcore.Level, service string) (Logger, error) {
+func newZapLogger(level zapcore.Level) (Logger, error) {
+	logger := &zapLogger{level: level}
+	if err := logger.Setup(); err != nil {
+		return nil, err
+	}
+	return logger, nil
+}
+
+func (zl *zapLogger) Setup() error {
 	config := zap.Config{
-		Encoding:         "json",
-		Level:            zap.NewAtomicLevelAt(level),
+		Encoding:         "console",
+		Level:            zap.NewAtomicLevelAt(zl.level),
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stderr"},
 		EncoderConfig: zapcore.EncoderConfig{
@@ -24,7 +32,7 @@ func newZapLogger(level zapcore.Level, service string) (Logger, error) {
 			MessageKey:     "msg",
 			StacktraceKey:  "stacktrace",
 			LineEnding:     zapcore.DefaultLineEnding,
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeLevel:    zapcore.CapitalColorLevelEncoder,
 			EncodeTime:     zapcore.ISO8601TimeEncoder,
 			EncodeDuration: zapcore.StringDurationEncoder,
 			EncodeCaller:   zapcore.ShortCallerEncoder,
@@ -32,11 +40,10 @@ func newZapLogger(level zapcore.Level, service string) (Logger, error) {
 	}
 	logger, err := config.Build()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
-	logger = logger.With(zap.String("service", service))
-	return &zapLogger{logger: logger, service: service}, nil
+	zl.logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
+	return nil
 }
 
 func (zl *zapLogger) Debug(msg string, fields ...F) {
@@ -79,6 +86,7 @@ func (zl *zapLogger) Panic(msg string, fields ...F) {
 	zl.logger.Panic(msg, zapFields...)
 }
 
-func (zl *zapLogger) AddField(key, value string) {
+func (zl *zapLogger) AddRequestID(key, value string) {
+	_ = zl.Setup()
 	zl.logger = zl.logger.With(zap.String(key, value))
 }
