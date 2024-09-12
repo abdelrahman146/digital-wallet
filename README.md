@@ -1,5 +1,14 @@
 # Digital Wallet System
 
+```mermaid
+graph LR
+    subgraph public["Public Schema"]
+        wallets[wallets]
+        
+    end
+    
+```
+
 ## Introduction
 
 The **Digital Wallet System** is a robust, secure, and scalable component for e-commerce platforms, designed to handle financial transactions with the highest level of integrity, consistency, and transparency. It supports a wide range of operations, including deposits, withdrawals, purchases, refunds, and peer-to-peer transfers. This system is built using Go, Fiber, and GORM, ensuring efficiency and high performance even under heavy load. Additionally, we implement Rate Limiting, Transaction Queuing with Kafka, and Anomaly Detection to further enhance security, reliability, and system robustness.

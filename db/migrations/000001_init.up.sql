@@ -95,6 +95,7 @@ BEGIN
         metadata JSONB,
         program_id INT REFERENCES ' || schema_name || '.programs(id) ON DELETE SET NULL,
         amount BIGINT NOT NULL,
+        expire_at TIMESTAMP,
         previous_balance BIGINT NOT NULL,
         new_balance BIGINT NOT NULL,
         version BIGINT DEFAULT 0 NOT NULL CHECK (version >= 0),
