@@ -87,7 +87,7 @@ func main() {
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {
-		return errs.NewNotFoundError("Route not found", nil)
+		return errs.NewNotFoundError("Route not found", "", nil)
 	})
 
 	// Signal handling for graceful shutdown
