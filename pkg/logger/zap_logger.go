@@ -10,15 +10,17 @@ type zapLogger struct {
 	level  zapcore.Level
 }
 
-func newZapLogger(level zapcore.Level) (Logger, error) {
-	logger := &zapLogger{level: level}
-	if err := logger.Setup(); err != nil {
+func NewZapLogger(level zapcore.Level, fields ...F) (Logger, error) {
+	zl := &zapLogger{level: level}
+	logger, err := zl.Setup(fields...)
+	zl.logger = logger
+	if err != nil {
 		return nil, err
 	}
-	return logger, nil
+	return zl, nil
 }
 
-func (zl *zapLogger) Setup() error {
+func (zl *zapLogger) Setup(fields ...F) (*zap.Logger, error) {
 	config := zap.Config{
 		Encoding:         "console",
 		Level:            zap.NewAtomicLevelAt(zl.level),
@@ -40,10 +42,13 @@ func (zl *zapLogger) Setup() error {
 	}
 	logger, err := config.Build()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	zl.logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
-	return nil
+	logger = logger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
+	for _, field := range fields {
+		logger = logger.With(zap.Any(field.Key, field.Value))
+	}
+	return logger, nil
 }
 
 func (zl *zapLogger) Debug(msg string, fields ...F) {
@@ -84,9 +89,4 @@ func (zl *zapLogger) Panic(msg string, fields ...F) {
 		zapFields = append(zapFields, zap.Any(field.Key, field.Value))
 	}
 	zl.logger.Panic(msg, zapFields...)
-}
-
-func (zl *zapLogger) AddRequestID(key, value string) {
-	_ = zl.Setup()
-	zl.logger = zl.logger.With(zap.String(key, value))
 }
