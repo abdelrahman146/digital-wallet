@@ -47,7 +47,7 @@ func main() {
 	app.Use(requestid.New())
 
 	// Custom middleware to create app context
-	app.Use(api.CreateAppContext)
+	app.Use(api.CreateAppContext())
 
 	app.Get("/metrics", monitor.New())
 	app.Use(fiberLogger.New(fiberLogger.Config{
@@ -86,6 +86,7 @@ func main() {
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {
+		api.GetLogger(c.Context()).Info("Route not found", logger.Field("path", c.Path()))
 		return errs.NewNotFoundError("Route not found", "", nil)
 	})
 

@@ -29,7 +29,7 @@ func (h *v1UserHandler) CreateUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return err
 	}
-	user, err := h.services.User.CreateUser(&req)
+	user, err := h.services.User.CreateUser(c.Context(), &req)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (h *v1UserHandler) CreateUser(c *fiber.Ctx) error {
 
 func (h *v1UserHandler) GetUserByID(c *fiber.Ctx) error {
 	userId := c.Params("userId")
-	user, err := h.services.User.GetUserByID(userId)
+	user, err := h.services.User.GetUserByID(c.Context(), userId)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (h *v1UserHandler) GetUserByID(c *fiber.Ctx) error {
 func (h *v1UserHandler) SetUserTier(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	tierId := c.Params("tierId")
-	user, err := h.services.User.SetUserTier(userId, tierId)
+	user, err := h.services.User.SetUserTier(c.Context(), userId, tierId)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (h *v1UserHandler) GetUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	users, err := h.services.User.GetUsers(page, limit)
+	users, err := h.services.User.GetUsers(c.Context(), page, limit)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (h *v1UserHandler) GetUsers(c *fiber.Ctx) error {
 
 func (h *v1UserHandler) DeleteUser(c *fiber.Ctx) error {
 	userId := c.Params("userId")
-	err := h.services.User.DeleteUser(userId)
+	err := h.services.User.DeleteUser(c.Context(), userId)
 	if err != nil {
 		return err
 	}

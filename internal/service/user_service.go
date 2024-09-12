@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"digital-wallet/internal/model"
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
@@ -10,12 +11,12 @@ import (
 )
 
 type UserService interface {
-	CreateUser(req *CreateUserRequest) (*model.User, error)
-	GetUserByID(userId string) (*model.User, error)
-	SetUserTier(userId string, tierId string) (*model.User, error)
-	GetUsersByTierID(tierId string, page int, limit int) (*api.List[model.User], error)
-	GetUsers(page int, limit int) (*api.List[model.User], error)
-	DeleteUser(userId string) error
+	CreateUser(ctx context.Context, req *CreateUserRequest) (*model.User, error)
+	GetUserByID(ctx context.Context, userId string) (*model.User, error)
+	SetUserTier(ctx context.Context, userId string, tierId string) (*model.User, error)
+	GetUsersByTierID(ctx context.Context, tierId string, page int, limit int) (*api.List[model.User], error)
+	GetUsers(ctx context.Context, page int, limit int) (*api.List[model.User], error)
+	DeleteUser(ctx context.Context, userId string) error
 }
 
 type userService struct {
@@ -26,66 +27,53 @@ func NewUserService(repos *repository.Repos) UserService {
 	return &userService{repos: repos}
 }
 
-func (s *userService) CreateUser(req *CreateUserRequest) (*model.User, error) {
+func (s *userService) CreateUser(ctx context.Context, req *CreateUserRequest) (*model.User, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		logger.GetLogger().Error("Invalid user request", logger.Field("fields", fields), logger.Field("request", req))
+		api.GetLogger(ctx).Error("Invalid user request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid user request", "", fields)
 	}
-	user, _ := s.repos.User.GetUserByID(req.ID)
+	user, _ := s.repos.User.GetUserByID(ctx, req.ID)
 	if user != nil {
-		logger.GetLogger().Error("User already exists", logger.Field("userId", req.ID))
+		api.GetLogger(ctx).Error("User already exists", logger.Field("userId", req.ID))
 		return nil, errs.NewConflictError("User already exists", "USER_ALREADY_EXISTS", nil)
 	}
 	user = &model.User{
 		ID:     req.ID,
 		TierID: req.TierID,
 	}
-	if err := s.repos.User.CreateUser(user); err != nil {
+	if err := s.repos.User.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (s *userService) GetUserByID(userId string) (*model.User, error) {
-	user, err := s.repos.User.GetUserByID(userId)
+func (s *userService) GetUserByID(ctx context.Context, userId string) (*model.User, error) {
+	user, err := s.repos.User.GetUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (s *userService) SetUserTier(userId string, tierId string) (*model.User, error) {
-	user, err := s.repos.User.GetUserByID(userId)
+func (s *userService) SetUserTier(ctx context.Context, userId string, tierId string) (*model.User, error) {
+	user, err := s.repos.User.GetUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 	user.TierID = tierId
-	if err := s.repos.User.SetUserTier(userId, tierId); err != nil {
+	if err := s.repos.User.SetUserTier(ctx, userId, tierId); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (s *userService) GetUsersByTierID(tierId string, page int, limit int) (*api.List[model.User], error) {
-	users, err := s.repos.User.GetUsersByTierID(tierId, page, limit)
+func (s *userService) GetUsersByTierID(ctx context.Context, tierId string, page int, limit int) (*api.List[model.User], error) {
+	users, err := s.repos.User.GetUsersByTierID(ctx, tierId, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.User.GetTotalUsersByTierID(tierId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &api.List[model.User]{Items: users, Total: total, Page: page, Limit: limit}, nil
-}
-
-func (s *userService) GetUsers(page int, limit int) (*api.List[model.User], error) {
-	users, err := s.repos.User.GetUsers(page, limit)
-	if err != nil {
-		return nil, err
-	}
-	total, err := s.repos.User.GetTotalUsers()
+	total, err := s.repos.User.GetTotalUsersByTierID(ctx, tierId)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +81,19 @@ func (s *userService) GetUsers(page int, limit int) (*api.List[model.User], erro
 	return &api.List[model.User]{Items: users, Total: total, Page: page, Limit: limit}, nil
 }
 
-func (s *userService) DeleteUser(userId string) error {
-	return s.repos.User.DeleteUser(userId)
+func (s *userService) GetUsers(ctx context.Context, page int, limit int) (*api.List[model.User], error) {
+	users, err := s.repos.User.GetUsers(ctx, page, limit)
+	if err != nil {
+		return nil, err
+	}
+	total, err := s.repos.User.GetTotalUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.List[model.User]{Items: users, Total: total, Page: page, Limit: limit}, nil
+}
+
+func (s *userService) DeleteUser(ctx context.Context, userId string) error {
+	return s.repos.User.DeleteUser(ctx, userId)
 }

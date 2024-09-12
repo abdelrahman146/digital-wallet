@@ -39,7 +39,7 @@ func (h *v1AccountHandler) GetAccounts(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	accounts, err := h.services.Account.GetAccounts(walletId, page, limit)
+	accounts, err := h.services.Account.GetAccounts(c.Context(), walletId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (h *v1AccountHandler) GetAccounts(c *fiber.Ctx) error {
 
 func (h *v1AccountHandler) GetAccountsSum(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
-	sum, err := h.services.Account.GetAccountsSum(walletId)
+	sum, err := h.services.Account.GetAccountsSum(c.Context(), walletId)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (h *v1AccountHandler) GetAccountsSum(c *fiber.Ctx) error {
 func (h *v1AccountHandler) GetAccountByID(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	id := c.Params("accountId")
-	account, err := h.services.Account.GetAccountByID(walletId, id)
+	account, err := h.services.Account.GetAccountByID(c.Context(), walletId, id)
 	if err != nil {
 		return err
 	}
@@ -73,18 +73,18 @@ func (h *v1AccountHandler) CreateAccount(c *fiber.Ctx) error {
 
 	// Parse request body
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 
 	// Validate request
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields))
+		api.GetLogger(c.Context()).Error("Invalid request", logger.Field("fields", fields))
 		return errs.NewValidationError("Invalid request", "INVALID_BODY_REQUEST", fields)
 	}
 
-	account, err := h.services.Account.CreateAccount(walletId, req.UserID)
+	account, err := h.services.Account.CreateAccount(c.Context(), walletId, req.UserID)
 	if err != nil {
 		return err
 	}
@@ -98,11 +98,11 @@ func (h *v1AccountHandler) GetAccountTransactionsByID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	_, err = h.services.Account.GetAccountByID(walletId, id)
+	_, err = h.services.Account.GetAccountByID(c.Context(), walletId, id)
 	if err != nil {
 		return err
 	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(walletId, id, page, limit)
+	transactions, err := h.services.Transaction.GetTransactionsByAccountID(c.Context(), walletId, id, page, limit)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (h *v1AccountHandler) GetAccountTransactionsByID(c *fiber.Ctx) error {
 func (h *v1AccountHandler) DeleteAccount(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	id := c.Params("accountId")
-	err := h.services.Account.DeleteAccount(walletId, id)
+	err := h.services.Account.DeleteAccount(c.Context(), walletId, id)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (h *v1AccountHandler) GetAccountTransactionsByAccountID(c *fiber.Ctx) error
 	if err != nil {
 		return err
 	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(walletId, accountId, page, limit)
+	transactions, err := h.services.Transaction.GetTransactionsByAccountID(c.Context(), walletId, accountId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -138,10 +138,10 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	var req service.TransactionRequest
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	transaction, err := h.services.Transaction.CreateTransaction(walletId, accountId, model.TransactionActorTypeUser, "123", &req)
+	transaction, err := h.services.Transaction.CreateTransaction(c.Context(), walletId, accountId, model.TransactionActorTypeUser, "123", &req)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 func (h *v1AccountHandler) GetAccountTransactionsSum(c *fiber.Ctx) error {
 	accountId := c.Params("accountId")
 	walletId := c.Params("walletId")
-	sum, err := h.services.Transaction.GetTransactionsSumByAccountID(walletId, accountId)
+	sum, err := h.services.Transaction.GetTransactionsSumByAccountID(c.Context(), walletId, accountId)
 	if err != nil {
 		return err
 	}

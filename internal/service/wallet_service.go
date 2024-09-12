@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"digital-wallet/internal/model"
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
@@ -11,13 +12,13 @@ import (
 )
 
 type WalletService interface {
-	CreateWallet(req *CreateWalletRequest) (*model.Wallet, error)
-	GetAccountsSum(walletId string) (uint64, error)
-	GetTransactionsSum(walletId string) (uint64, error)
-	UpdateWallet(walletId string, req *UpdateWalletRequest) (*model.Wallet, error)
-	GetWalletByID(walletId string) (*model.Wallet, error)
-	GetWallets(page int, limit int) (*api.List[model.Wallet], error)
-	DeleteWallet(walletId string) error
+	CreateWallet(ctx context.Context, req *CreateWalletRequest) (*model.Wallet, error)
+	GetAccountsSum(ctx context.Context, walletId string) (uint64, error)
+	GetTransactionsSum(ctx context.Context, walletId string) (uint64, error)
+	UpdateWallet(ctx context.Context, walletId string, req *UpdateWalletRequest) (*model.Wallet, error)
+	GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
+	GetWallets(ctx context.Context, page int, limit int) (*api.List[model.Wallet], error)
+	DeleteWallet(ctx context.Context, walletId string) error
 }
 
 type walletService struct {
@@ -28,10 +29,10 @@ func NewWalletService(repos *repository.Repos) WalletService {
 	return &walletService{repos: repos}
 }
 
-func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, error) {
+func (s *walletService) CreateWallet(ctx context.Context, req *CreateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields), logger.Field("request", req))
+		api.GetLogger(ctx).Error("Invalid request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid request", "", fields)
 	}
 	wallet := &model.Wallet{
@@ -47,19 +48,19 @@ func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, e
 		pointsExpireAfter := time.Duration(*req.PointsExpireAfter) * time.Millisecond
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
-	if err := s.repos.Wallet.CreateWallet(wallet); err != nil {
+	if err := s.repos.Wallet.CreateWallet(ctx, wallet); err != nil {
 		return nil, err
 	}
 	return wallet, nil
 }
 
-func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) (*model.Wallet, error) {
+func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *UpdateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		logger.GetLogger().Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
+		api.GetLogger(ctx).Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid transaction request", "", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
 	if err != nil {
 		return nil, err
 	}
@@ -75,40 +76,40 @@ func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) 
 		pointsExpireAfter := time.Duration(*req.PointsExpireAfter) * time.Millisecond
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
-	if err := s.repos.Wallet.UpdateWallet(wallet); err != nil {
+	if err := s.repos.Wallet.UpdateWallet(ctx, wallet); err != nil {
 		return nil, err
 	}
 	return wallet, nil
 }
 
-func (s *walletService) GetWalletByID(walletId string) (*model.Wallet, error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
+func (s *walletService) GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error) {
+	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
 	if wallet == nil {
 		return nil, errs.NewNotFoundError("wallet not found", "WALLET_NOT_FOUND", err)
 	}
 	return wallet, nil
 }
 
-func (s *walletService) GetWallets(page int, limit int) (*api.List[model.Wallet], error) {
-	wallets, err := s.repos.Wallet.GetWallets(page, limit)
+func (s *walletService) GetWallets(ctx context.Context, page int, limit int) (*api.List[model.Wallet], error) {
+	wallets, err := s.repos.Wallet.GetWallets(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.Wallet.GetTotalWallets()
+	total, err := s.repos.Wallet.GetTotalWallets(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &api.List[model.Wallet]{Items: wallets, Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *walletService) DeleteWallet(walletId string) error {
-	return s.repos.Wallet.DeleteWallet(walletId)
+func (s *walletService) DeleteWallet(ctx context.Context, walletId string) error {
+	return s.repos.Wallet.DeleteWallet(ctx, walletId)
 }
 
-func (s *walletService) GetAccountsSum(walletId string) (uint64, error) {
-	return s.repos.Account.GetAccountsSum(walletId)
+func (s *walletService) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {
+	return s.repos.Account.GetAccountsSum(ctx, walletId)
 }
 
-func (s *walletService) GetTransactionsSum(walletId string) (uint64, error) {
-	return s.repos.Transaction.GetTransactionsSum(walletId)
+func (s *walletService) GetTransactionsSum(ctx context.Context, walletId string) (uint64, error) {
+	return s.repos.Transaction.GetTransactionsSum(ctx, walletId)
 }

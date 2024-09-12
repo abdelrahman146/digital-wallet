@@ -28,10 +28,10 @@ func (h *v1TierHandler) Setup(group fiber.Router) {
 func (h *v1TierHandler) CreateTier(c *fiber.Ctx) error {
 	var req service.CreateTierRequest
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	tier, err := h.services.Tier.CreateTier(&req)
+	tier, err := h.services.Tier.CreateTier(c.Context(), &req)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (h *v1TierHandler) CreateTier(c *fiber.Ctx) error {
 
 func (h *v1TierHandler) GetTierByID(c *fiber.Ctx) error {
 	id := c.Params("tierId")
-	tier, err := h.services.Tier.GetTierByID(id)
+	tier, err := h.services.Tier.GetTierByID(c.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (h *v1TierHandler) GetTiers(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	tiers, err := h.services.Tier.GetTiers(page, limit)
+	tiers, err := h.services.Tier.GetTiers(c.Context(), page, limit)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (h *v1TierHandler) GetTiers(c *fiber.Ctx) error {
 
 func (h *v1TierHandler) DeleteTier(c *fiber.Ctx) error {
 	id := c.Params("tierId")
-	err := h.services.Tier.DeleteTier(id)
+	err := h.services.Tier.DeleteTier(c.Context(), id)
 	if err != nil {
 		return err
 	}

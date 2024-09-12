@@ -34,10 +34,10 @@ func (h *v1walletHandler) Setup(group fiber.Router) {
 func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
 	var req service.CreateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	wallet, err := h.services.Wallet.CreateWallet(&req)
+	wallet, err := h.services.Wallet.CreateWallet(c.Context(), &req)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
 
 func (h *v1walletHandler) GetWalletByID(c *fiber.Ctx) error {
 	id := c.Params("walletId")
-	wallet, err := h.services.Wallet.GetWalletByID(id)
+	wallet, err := h.services.Wallet.GetWalletByID(c.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (h *v1walletHandler) GetWallets(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	wallets, err := h.services.Wallet.GetWallets(page, limit)
+	wallets, err := h.services.Wallet.GetWallets(c.Context(), page, limit)
 	if err != nil {
 		return err
 	}
@@ -69,10 +69,10 @@ func (h *v1walletHandler) UpdateWallet(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	var req service.UpdateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	wallet, err := h.services.Wallet.UpdateWallet(id, &req)
+	wallet, err := h.services.Wallet.UpdateWallet(c.Context(), id, &req)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (h *v1walletHandler) UpdateWallet(c *fiber.Ctx) error {
 
 func (h *v1walletHandler) DeleteWallet(c *fiber.Ctx) error {
 	id := c.Params("walletId")
-	err := h.services.Wallet.DeleteWallet(id)
+	err := h.services.Wallet.DeleteWallet(c.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -90,11 +90,11 @@ func (h *v1walletHandler) DeleteWallet(c *fiber.Ctx) error {
 
 func (h *v1walletHandler) CheckWalletIntegrity(c *fiber.Ctx) error {
 	id := c.Params("walletId")
-	accountsSum, err := h.services.Wallet.GetAccountsSum(id)
+	accountsSum, err := h.services.Wallet.GetAccountsSum(c.Context(), id)
 	if err != nil {
 		return err
 	}
-	transactionsSum, err := h.services.Wallet.GetTransactionsSum(id)
+	transactionsSum, err := h.services.Wallet.GetTransactionsSum(c.Context(), id)
 	if err != nil {
 		return err
 	}

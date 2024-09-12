@@ -36,7 +36,7 @@ func (h *v1ExchangeRateHandler) CreateExchangeRate(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	exchangeRate, err := h.services.ExchangeRate.CreateExchangeRate(&req)
+	exchangeRate, err := h.services.ExchangeRate.CreateExchangeRate(c.Context(), &req)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (h *v1ExchangeRateHandler) GetExchangeRates(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	exchangeRates, err := h.services.ExchangeRate.GetExchangeRates(page, limit)
+	exchangeRates, err := h.services.ExchangeRate.GetExchangeRates(c.Context(), page, limit)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (h *v1ExchangeRateHandler) GetExchangeRatesByWalletID(c *fiber.Ctx) error {
 		return err
 	}
 	walletId := c.Params("walletId")
-	exchangeRates, err := h.services.ExchangeRate.GetExchangeRatesByWalletID(walletId, page, limit)
+	exchangeRates, err := h.services.ExchangeRate.GetExchangeRatesByWalletID(c.Context(), walletId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -74,10 +74,10 @@ func (h *v1ExchangeRateHandler) UpdateExchangeRate(c *fiber.Ctx) error {
 		ExchangeRate decimal.Decimal `json:"exchangeRate" validate:"required"`
 	}
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	exchangeRate, err := h.services.ExchangeRate.UpdateExchangeRate(exchangeRateId, req.ExchangeRate)
+	exchangeRate, err := h.services.ExchangeRate.UpdateExchangeRate(c.Context(), exchangeRateId, req.ExchangeRate)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (h *v1ExchangeRateHandler) UpdateExchangeRate(c *fiber.Ctx) error {
 
 func (h *v1ExchangeRateHandler) DeleteExchangeRate(c *fiber.Ctx) error {
 	exchangeRateId := c.Params("exchangeRateId")
-	err := h.services.ExchangeRate.DeleteExchangeRate(exchangeRateId)
+	err := h.services.ExchangeRate.DeleteExchangeRate(c.Context(), exchangeRateId)
 	if err != nil {
 		return err
 	}
@@ -102,18 +102,18 @@ func (h *v1ExchangeRateHandler) Exchange(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&req); err != nil {
-		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 
 	// Validate request
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields))
+		api.GetLogger(c.Context()).Error("Invalid request", logger.Field("fields", fields))
 		return errs.NewValidationError("Invalid request", "", fields)
 	}
 
-	exchangeResponse, err := h.services.ExchangeRate.Exchange(fromWalletId, req.ToWalletID, req.UserID, model.TransactionActorTypeUser, req.UserID, req.Amount)
+	exchangeResponse, err := h.services.ExchangeRate.Exchange(c.Context(), fromWalletId, req.ToWalletID, req.UserID, model.TransactionActorTypeUser, req.UserID, req.Amount)
 	if err != nil {
 		return err
 	}

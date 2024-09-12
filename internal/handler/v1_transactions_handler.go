@@ -29,7 +29,7 @@ func (h *v1TransactionsHandler) GetTransactions(c *fiber.Ctx) error {
 		return err
 	}
 	walletId := c.Params("walletId")
-	transactions, err := h.services.Transaction.GetTransactions(walletId, page, limit)
+	transactions, err := h.services.Transaction.GetTransactions(c.Context(), walletId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (h *v1TransactionsHandler) GetTransactions(c *fiber.Ctx) error {
 
 func (h *v1TransactionsHandler) GetTransactionsSum(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
-	sum, err := h.services.Transaction.GetTransactionsSum(walletId)
+	sum, err := h.services.Transaction.GetTransactionsSum(c.Context(), walletId)
 	if err != nil {
 		return err
 	}
