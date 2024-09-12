@@ -24,19 +24,19 @@ func NewAccountService(repos *repository.Repos) AccountService {
 }
 
 func (s *accountService) CreateAccount(walletId, userId string) (*model.Account, error) {
-	user, _ := s.repos.User.GetUserByID(userId)
+	user, err := s.repos.User.GetUserByID(userId)
 	if user == nil {
-		return nil, errs.NewNotFoundError("user not found", nil)
+		return nil, errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
 	}
-	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {
-		return nil, errs.NewNotFoundError("wallet not found", nil)
+		return nil, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
 
 	account := &model.Account{
 		UserID: userId,
 	}
-	err := s.repos.Account.CreateAccount(wallet.ID, account)
+	err = s.repos.Account.CreateAccount(wallet.ID, account)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +44,9 @@ func (s *accountService) CreateAccount(walletId, userId string) (*model.Account,
 }
 
 func (s *accountService) GetAccountByID(walletId, accountId string) (*model.Account, error) {
-	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {
-		return nil, errs.NewNotFoundError("wallet not found", nil)
+		return nil, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
 	account, err := s.repos.Account.GetAccountByID(wallet.ID, accountId)
 	if err != nil {
@@ -56,9 +56,9 @@ func (s *accountService) GetAccountByID(walletId, accountId string) (*model.Acco
 }
 
 func (s *accountService) GetAccountsSum(walletId string) (uint64, error) {
-	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {
-		return 0, errs.NewNotFoundError("wallet not found", nil)
+		return 0, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
 	sum, err := s.repos.Account.GetAccountsSum(wallet.ID)
 	if err != nil {
@@ -68,9 +68,9 @@ func (s *accountService) GetAccountsSum(walletId string) (uint64, error) {
 }
 
 func (s *accountService) GetAccounts(walletId string, page int, limit int) (*api.List[model.Account], error) {
-	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {
-		return nil, errs.NewNotFoundError("wallet not found", nil)
+		return nil, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
 	accounts, err := s.repos.Account.GetAccounts(wallet.ID, page, limit)
 	if err != nil {
@@ -84,13 +84,13 @@ func (s *accountService) GetAccounts(walletId string, page int, limit int) (*api
 }
 
 func (s *accountService) DeleteAccount(walletId, accountId string) error {
-	wallet, _ := s.repos.Wallet.GetWalletByID(walletId)
+	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if wallet == nil {
-		return errs.NewNotFoundError("wallet not found", nil)
+		return errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
-	account, _ := s.repos.Account.GetAccountByID(wallet.ID, accountId)
+	account, err := s.repos.Account.GetAccountByID(wallet.ID, accountId)
 	if account == nil {
-		return errs.NewNotFoundError("account not found", nil)
+		return errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
 	return s.repos.Account.DeleteAccount(wallet.ID, accountId)
 }

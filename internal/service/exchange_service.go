@@ -5,6 +5,7 @@ import (
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"github.com/shopspring/decimal"
 )
 
@@ -69,9 +70,10 @@ func (s *exchangeRateService) UpdateExchangeRate(exchangeRateId string, newRate 
 }
 
 func (s *exchangeRateService) DeleteExchangeRate(exchangeRateId string) error {
-	exchangeRate, _ := s.repos.ExchangeRate.GetExchangeRateByID(exchangeRateId)
+	exchangeRate, err := s.repos.ExchangeRate.GetExchangeRateByID(exchangeRateId)
 	if exchangeRate == nil {
-		return errs.NewNotFoundError("exchangeRate not found", nil)
+		logger.GetLogger().Error("Exchange Rate not found", logger.Field("exchangeRateId", exchangeRateId))
+		return errs.NewNotFoundError("Exchange Rate not found", "EXCHANGE_RATE_NOT_FOUND", err)
 	}
 	return s.repos.ExchangeRate.DeleteExchangeRate(exchangeRateId)
 }
@@ -82,35 +84,40 @@ func (s *exchangeRateService) Exchange(fromWalletId, toWalletId, userId, actorTy
 		return nil, err
 	}
 	if fromWallet == nil {
-		return nil, errs.NewNotFoundError("fromWallet not found", nil)
+		logger.GetLogger().Error("From Wallet not found", logger.Field("fromWalletId", fromWalletId))
+		return nil, errs.NewNotFoundError("fromWallet not found", "FROM_WALLET_NOT_FOUND", nil)
 	}
 	toWallet, err := s.repos.Wallet.GetWalletByID(toWalletId)
 	if err != nil {
 		return nil, err
 	}
 	if toWallet == nil {
-		return nil, errs.NewNotFoundError("toWallet not found", nil)
+		logger.GetLogger().Error("To Wallet not found", logger.Field("toWalletId", toWalletId))
+		return nil, errs.NewNotFoundError("toWallet not found", "TO_WALLET_NOT_FOUND", nil)
 	}
 	user, err := s.repos.User.GetUserByID(userId)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, errs.NewNotFoundError("user not found", nil)
+		logger.GetLogger().Error("User not found", logger.Field("userId", userId))
+		return nil, errs.NewNotFoundError("User not found", "USER_NOT_FOUND", nil)
 	}
 	exchangeRate, err := s.repos.ExchangeRate.GetExchangeRate(fromWalletId, toWalletId, user.TierID)
 	if err != nil {
 		return nil, err
 	}
 	if exchangeRate == nil {
-		return nil, errs.NewNotFoundError("exchangeRate not found", nil)
+		logger.GetLogger().Error("Exchange Rate not found", logger.Field("fromWalletId", fromWalletId), logger.Field("toWalletId", toWalletId), logger.Field("tierId", user.TierID))
+		return nil, errs.NewNotFoundError("Exchange Rate not found", "EXCHANGE_RATE_NOT_FOUND", nil)
 	}
 	fromAccount, err := s.repos.Account.GetAccountByUserID(fromWalletId, userId)
 	if err != nil {
 		return nil, err
 	}
 	if fromAccount == nil {
-		return nil, errs.NewNotFoundError("account not found", nil)
+		logger.GetLogger().Error("From Account not found", logger.Field("fromWalletId", fromWalletId), logger.Field("userId", userId))
+		return nil, errs.NewNotFoundError("From Account not found", "FROM_ACCOUNT_NOT_FOUND", nil)
 	}
 	toAccount, err := s.repos.Account.GetAccountByUserID(toWalletId, userId)
 	if err != nil {
@@ -125,7 +132,8 @@ func (s *exchangeRateService) Exchange(fromWalletId, toWalletId, userId, actorTy
 		}
 	}
 	if amount > fromAccount.Balance {
-		return nil, errs.NewBadRequestError("insufficient balance", nil)
+		logger.GetLogger().Error("Insufficient balance", logger.Field("amount", amount), logger.Field("balance", fromAccount.Balance))
+		return nil, errs.NewPaymentRequiredError("Insufficient balance", "INSUFFICIENT_BALANCE", nil)
 	}
 	fromTransaction := &model.Transaction{
 		AccountID: fromAccount.ID,

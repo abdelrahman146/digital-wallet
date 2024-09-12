@@ -4,6 +4,7 @@ import (
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -27,7 +28,8 @@ func (h *v1TierHandler) Setup(group fiber.Router) {
 func (h *v1TierHandler) CreateTier(c *fiber.Ctx) error {
 	var req service.CreateTierRequest
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	tier, err := h.services.Tier.CreateTier(&req)
 	if err != nil {

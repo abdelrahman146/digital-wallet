@@ -7,7 +7,6 @@ func NewErrorResponse(err error) (httpCode int, resp ErrorResponse) {
 	httpCode = customErr.HttpCode
 	body := ErrorResponseBody{
 		Message:  customErr.Message,
-		Desc:     customErr.Desc,
 		HttpCode: customErr.HttpCode,
 		Code:     customErr.Code,
 	}

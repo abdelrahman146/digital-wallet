@@ -5,6 +5,7 @@ import (
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"digital-wallet/pkg/validator"
 	"time"
 )
@@ -30,7 +31,8 @@ func NewWalletService(repos *repository.Repos) WalletService {
 func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid request", fields)
+		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields), logger.Field("request", req))
+		return nil, errs.NewValidationError("Invalid request", "", fields)
 	}
 	wallet := &model.Wallet{
 		ID:           req.ID,
@@ -46,7 +48,7 @@ func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, e
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
 	if err := s.repos.Wallet.CreateWallet(wallet); err != nil {
-		return nil, errs.NewInternalError("failed to create wallet", err)
+		return nil, err
 	}
 	return wallet, nil
 }
@@ -54,11 +56,12 @@ func (s *walletService) CreateWallet(req *CreateWalletRequest) (*model.Wallet, e
 func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) (*model.Wallet, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid request", fields)
+		logger.GetLogger().Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
+		return nil, errs.NewValidationError("Invalid transaction request", "", fields)
 	}
 	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
 	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
+		return nil, err
 	}
 	wallet.Name = req.Name
 	wallet.Description = req.Description
@@ -80,8 +83,8 @@ func (s *walletService) UpdateWallet(walletId string, req *UpdateWalletRequest) 
 
 func (s *walletService) GetWalletByID(walletId string) (*model.Wallet, error) {
 	wallet, err := s.repos.Wallet.GetWalletByID(walletId)
-	if err != nil {
-		return nil, errs.NewNotFoundError("wallet not found", err)
+	if wallet == nil {
+		return nil, errs.NewNotFoundError("wallet not found", "WALLET_NOT_FOUND", err)
 	}
 	return wallet, nil
 }
@@ -89,11 +92,11 @@ func (s *walletService) GetWalletByID(walletId string) (*model.Wallet, error) {
 func (s *walletService) GetWallets(page int, limit int) (*api.List[model.Wallet], error) {
 	wallets, err := s.repos.Wallet.GetWallets(page, limit)
 	if err != nil {
-		return nil, errs.NewInternalError("failed to fetch wallets", err)
+		return nil, err
 	}
 	total, err := s.repos.Wallet.GetTotalWallets()
 	if err != nil {
-		return nil, errs.NewInternalError("failed to fetch total wallets", err)
+		return nil, err
 	}
 	return &api.List[model.Wallet]{Items: wallets, Page: page, Limit: limit, Total: total}, nil
 }

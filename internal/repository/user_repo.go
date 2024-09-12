@@ -2,7 +2,7 @@ package repository
 
 import (
 	"digital-wallet/internal/model"
-	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"fmt"
 	"gorm.io/gorm"
 	"strings"
@@ -57,7 +57,8 @@ func (r *userRepo) GetUsersAccounts(userIds []string) ([]model.Account, error) {
 	var accounts []model.Account
 	err = r.db.Raw(finalQuery).Scan(&accounts).Error
 	if err != nil {
-		return nil, errs.NewInternalError("failed to get accounts", err)
+		logger.GetLogger().Error("failed to get accounts", logger.Field("error", err), logger.Field("userIds", userIds), logger.Field("finalQuery", finalQuery))
+		return nil, err
 	}
 
 	return accounts, nil
@@ -92,7 +93,11 @@ func (r *userRepo) GetUsersList(users []model.User) ([]model.User, error) {
 }
 
 func (r *userRepo) CreateUser(user *model.User) error {
-	return r.db.Create(user).Error
+	if err := r.db.Create(user).Error; err != nil {
+		logger.GetLogger().Error("failed to create user", logger.Field("error", err), logger.Field("user", user))
+		return err
+	}
+	return nil
 }
 
 func (r *userRepo) GetUserByID(userId string) (*model.User, error) {
@@ -101,11 +106,13 @@ func (r *userRepo) GetUserByID(userId string) (*model.User, error) {
 	// Fetch the user from the public schema
 	err := r.db.Where("id = ?", userId).First(&user).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get user by id", logger.Field("error", err), logger.Field("userId", userId))
 		return nil, err
 	}
 
 	accounts, err := r.GetUsersAccounts([]string{fmt.Sprintf("'%s'", userId)})
 	if err != nil {
+		logger.GetLogger().Error("failed to get user accounts", logger.Field("error", err), logger.Field("userId", userId), logger.Field("accounts", accounts))
 		return nil, err
 	}
 
@@ -115,7 +122,10 @@ func (r *userRepo) GetUserByID(userId string) (*model.User, error) {
 }
 
 func (r *userRepo) SetUserTier(userId string, tierId string) error {
-	return r.db.Model(&model.User{}).Where("id = ?", userId).Update("tier_id", tierId).Error
+	if err := r.db.Model(&model.User{}).Where("id = ?", userId).Update("tier_id", tierId).Error; err != nil {
+		logger.GetLogger().Error("failed to set user tier", logger.Field("error", err), logger.Field("userId", userId), logger.Field("tierId", tierId))
+	}
+	return nil
 }
 
 func (r *userRepo) GetUsersByTierID(tierId string, page int, limit int) ([]model.User, error) {
@@ -124,6 +134,7 @@ func (r *userRepo) GetUsersByTierID(tierId string, page int, limit int) ([]model
 	// Fetch the users who belong to the specified tier
 	err := r.db.Where("tier_id = ?", tierId).Offset((page - 1) * limit).Limit(limit).Find(&users).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get users by tier id", logger.Field("error", err), logger.Field("tierId", tierId))
 		return nil, err
 	}
 
@@ -159,8 +170,10 @@ func (r *userRepo) GetUsersByTierID(tierId string, page int, limit int) ([]model
 
 func (r *userRepo) GetTotalUsersByTierID(tierId string) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.User{}).Where("tier_id = ?", tierId).Count(&count).Error
-	return count, err
+	if err := r.db.Model(&model.User{}).Where("tier_id = ?", tierId).Count(&count).Error; err != nil {
+		logger.GetLogger().Error("failed to get total users by tier id", logger.Field("error", err), logger.Field("tierId", tierId))
+	}
+	return count, nil
 }
 
 func (r *userRepo) GetUsers(page int, limit int) ([]model.User, error) {
@@ -168,6 +181,7 @@ func (r *userRepo) GetUsers(page int, limit int) ([]model.User, error) {
 
 	err := r.db.Offset((page - 1) * limit).Limit(limit).Find(&users).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get users", logger.Field("error", err))
 		return nil, err
 	}
 
@@ -181,6 +195,8 @@ func (r *userRepo) GetUsers(page int, limit int) ([]model.User, error) {
 
 func (r *userRepo) GetTotalUsers() (int64, error) {
 	var count int64
-	err := r.db.Model(&model.User{}).Count(&count).Error
-	return count, err
+	if err := r.db.Model(&model.User{}).Count(&count).Error; err != nil {
+		logger.GetLogger().Error("failed to get total users", logger.Field("error", err))
+	}
+	return count, nil
 }

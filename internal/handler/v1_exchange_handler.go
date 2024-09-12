@@ -5,6 +5,8 @@ import (
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
+	"digital-wallet/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/shopspring/decimal"
 )
@@ -32,7 +34,7 @@ func (h *v1ExchangeRateHandler) Setup(group fiber.Router) {
 func (h *v1ExchangeRateHandler) CreateExchangeRate(c *fiber.Ctx) error {
 	var req service.CreateExchangeRateRequest
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	exchangeRate, err := h.services.ExchangeRate.CreateExchangeRate(&req)
 	if err != nil {
@@ -72,7 +74,8 @@ func (h *v1ExchangeRateHandler) UpdateExchangeRate(c *fiber.Ctx) error {
 		ExchangeRate decimal.Decimal `json:"exchangeRate" validate:"required"`
 	}
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	exchangeRate, err := h.services.ExchangeRate.UpdateExchangeRate(exchangeRateId, req.ExchangeRate)
 	if err != nil {
@@ -97,9 +100,19 @@ func (h *v1ExchangeRateHandler) Exchange(c *fiber.Ctx) error {
 		UserID     string `json:"userId,omitempty" validate:"required"`
 		Amount     uint64 `json:"amount,omitempty" validate:"required,gt=0"`
 	}
+
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
+
+	// Validate request
+	if err := validator.GetValidator().ValidateStruct(req); err != nil {
+		fields := validator.GetValidator().GetValidationErrors(err)
+		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields))
+		return errs.NewValidationError("Invalid request", "", fields)
+	}
+
 	exchangeResponse, err := h.services.ExchangeRate.Exchange(fromWalletId, req.ToWalletID, req.UserID, model.TransactionActorTypeUser, req.UserID, req.Amount)
 	if err != nil {
 		return err

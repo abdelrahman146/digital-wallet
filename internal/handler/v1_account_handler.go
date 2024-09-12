@@ -5,6 +5,7 @@ import (
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"digital-wallet/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 )
@@ -72,13 +73,15 @@ func (h *v1AccountHandler) CreateAccount(c *fiber.Ctx) error {
 
 	// Parse request body
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("Invalid Body Request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 
 	// Validate request
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return errs.NewValidationError("Invalid Body Request", fields)
+		logger.GetLogger().Error("Invalid request", logger.Field("fields", fields))
+		return errs.NewValidationError("Invalid request", "INVALID_BODY_REQUEST", fields)
 	}
 
 	account, err := h.services.Account.CreateAccount(walletId, req.UserID)
@@ -135,7 +138,8 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	var req service.TransactionRequest
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	transaction, err := h.services.Transaction.CreateTransaction(walletId, accountId, model.TransactionActorTypeUser, "123", &req)
 	if err != nil {

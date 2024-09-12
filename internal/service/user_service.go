@@ -5,6 +5,7 @@ import (
 	"digital-wallet/internal/repository"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"digital-wallet/pkg/validator"
 )
 
@@ -28,11 +29,13 @@ func NewUserService(repos *repository.Repos) UserService {
 func (s *userService) CreateUser(req *CreateUserRequest) (*model.User, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid user request", fields)
+		logger.GetLogger().Error("Invalid user request", logger.Field("fields", fields), logger.Field("request", req))
+		return nil, errs.NewValidationError("Invalid user request", "", fields)
 	}
 	user, _ := s.repos.User.GetUserByID(req.ID)
 	if user != nil {
-		return nil, errs.NewConflictError("user already exists", nil)
+		logger.GetLogger().Error("User already exists", logger.Field("userId", req.ID))
+		return nil, errs.NewConflictError("User already exists", "USER_ALREADY_EXISTS", nil)
 	}
 	user = &model.User{
 		ID:     req.ID,

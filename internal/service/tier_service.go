@@ -26,7 +26,7 @@ func NewTierService(repos *repository.Repos) TierService {
 func (s *tierService) CreateTier(req *CreateTierRequest) (*model.Tier, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
-		return nil, errs.NewValidationError("invalid tier request", fields)
+		return nil, errs.NewValidationError("Invalid tier request", "", fields)
 	}
 	tier := &model.Tier{
 		ID:   req.ID,

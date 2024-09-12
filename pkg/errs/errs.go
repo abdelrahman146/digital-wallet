@@ -2,7 +2,6 @@ package errs
 
 type CustomError struct {
 	Message  string
-	Desc     string            `json:"desc"`
 	Code     string            `json:"code"`
 	HttpCode int               `json:"httpCode"`
 	Original error             `json:"error,omitempty"`

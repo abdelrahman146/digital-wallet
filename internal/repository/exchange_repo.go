@@ -34,19 +34,25 @@ func (r *exchangeRateRepo) GetExchangeRateByID(exchangeRateId string) (*model.Ex
 	var exchangeRate model.ExchangeRate
 	err := r.db.Where("id = ?", exchangeRateId).First(&exchangeRate).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get exchange rate by id", logger.Field("error", err), logger.Field("exchangeRateId", exchangeRateId))
 		return nil, err
 	}
 	return &exchangeRate, nil
 }
 
 func (r *exchangeRateRepo) CreateExchangeRate(exchangeRate *model.ExchangeRate) error {
-	return r.db.Create(exchangeRate).Error
+	if err := r.db.Create(exchangeRate).Error; err != nil {
+		logger.GetLogger().Error("failed to create exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
+		return err
+	}
+	return nil
 }
 
 func (r *exchangeRateRepo) GetExchangeRates(page int, limit int) ([]model.ExchangeRate, error) {
 	var exchangeRates []model.ExchangeRate
 	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get exchange rates", logger.Field("error", err))
 		return nil, err
 	}
 	return exchangeRates, nil
@@ -56,6 +62,7 @@ func (r *exchangeRateRepo) GetTotalExchangeRates() (int64, error) {
 	var total int64
 	err := r.db.Model(&model.ExchangeRate{}).Count(&total).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get total exchange rates", logger.Field("error", err))
 		return 0, err
 	}
 	return total, nil
@@ -65,6 +72,7 @@ func (r *exchangeRateRepo) GetExchangeRatesByWalletID(walletId string, page int,
 	var exchangeRates []model.ExchangeRate
 	err := r.db.Where("from_wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get exchange rates by wallet id", logger.Field("error", err), logger.Field("walletId", walletId))
 		return nil, err
 	}
 	return exchangeRates, nil
@@ -74,23 +82,33 @@ func (r *exchangeRateRepo) GetTotalExchangeRatesByWalletID(walletId string) (int
 	var total int64
 	err := r.db.Model(&model.ExchangeRate{}).Where("from_wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get total exchange rates by wallet id", logger.Field("error", err), logger.Field("walletId", walletId))
 		return 0, err
 	}
 	return total, nil
 }
 
 func (r *exchangeRateRepo) UpdateExchangeRate(exchangeRate *model.ExchangeRate) error {
-	return r.db.Save(exchangeRate).Error
+	if err := r.db.Save(exchangeRate).Error; err != nil {
+		logger.GetLogger().Error("failed to update exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
+		return err
+	}
+	return nil
 }
 
 func (r *exchangeRateRepo) DeleteExchangeRate(exchangeRateId string) error {
-	return r.db.Where("id = ?", exchangeRateId).Delete(&model.ExchangeRate{}).Error
+	if err := r.db.Where("id = ?", exchangeRateId).Delete(&model.ExchangeRate{}).Error; err != nil {
+		logger.GetLogger().Error("failed to delete exchange rate", logger.Field("error", err), logger.Field("exchangeRateId", exchangeRateId))
+		return err
+	}
+	return nil
 }
 
 func (r *exchangeRateRepo) GetExchangeRate(fromWalletId, toWalletId, tierId string) (*model.ExchangeRate, error) {
 	var exchangeRate model.ExchangeRate
 	err := r.db.Where("from_wallet_id = ? AND to_wallet_id = ? AND tier_id = ?", fromWalletId, toWalletId, tierId).First(&exchangeRate).Error
 	if err != nil {
+		logger.GetLogger().Error("failed to get exchange rate by wallet id and tier id", logger.Field("error", err), logger.Field("fromWalletId", fromWalletId), logger.Field("toWalletId", toWalletId), logger.Field("tierId", tierId))
 		return nil, err
 	}
 	return &exchangeRate, nil
@@ -102,16 +120,19 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 
 		// lock update on from account
 		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, fromAccount.TableName())).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", from.Transaction.AccountID).First(fromAccount).Error; err != nil {
+			logger.GetLogger().Error("Error while fetching account by id", logger.Field("error", err), logger.Field("accountId", from.Transaction.AccountID))
 			return err
 		}
 
 		// optimistic locking
 		if fromAccount.Version != from.AccountVersion {
-			return errs.NewConflictError(fmt.Sprintf("account %s has been modified by another transaction", fromAccount.ID), nil)
+			logger.GetLogger().Error("account has been modified by another transaction", logger.Field("accountId", fromAccount.ID), logger.Field("accountVersion", from.AccountVersion), logger.Field("account", fromAccount))
+			return errs.NewConflictError(fmt.Sprintf("account %s has been modified by another transaction", fromAccount.ID), "ACCOUNT_VERSION_MODIfIED", nil)
 		}
 
 		if fromAccount.Balance < from.Transaction.Amount {
-			return errs.NewNotAcceptableError("insufficient balance", nil)
+			logger.GetLogger().Error("insufficient balance in account", logger.Field("accountId", fromAccount.ID))
+			return errs.NewPaymentRequiredError(fmt.Sprintf("insufficient balance in account %s", fromAccount.ID), "INSUFFICIENT_BALANCE", nil)
 		}
 
 		from.Transaction.PreviousBalance = fromAccount.Balance
@@ -127,12 +148,12 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 		}
 
 		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, from.Transaction.TableName())).Create(from.Transaction).Error; err != nil {
-			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
+			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err), logger.Field("transaction", from.Transaction))
 			return err
 		}
 
 		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", from.WalletID, fromAccount.TableName())).Save(fromAccount).Error; err != nil {
-			logger.GetLogger().Error("Error while saving account", logger.Field("error", err))
+			logger.GetLogger().Error("Error while saving account", logger.Field("error", err), logger.Field("account", fromAccount))
 			return err
 		}
 
@@ -146,7 +167,8 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 
 		// optimistic locking
 		if toAccount.Version != to.AccountVersion {
-			return errs.NewConflictError(fmt.Sprintf("account %s has been modified by another transaction", toAccount.ID), nil)
+			logger.GetLogger().Error("account has been modified by another transaction", logger.Field("accountId", toAccount.ID), logger.Field("accountVersion", to.AccountVersion), logger.Field("account", toAccount))
+			return errs.NewConflictError(fmt.Sprintf("account %s has been modified by another transaction", toAccount.ID), "ACCOUNT_VERSION_MODIFIED", nil)
 		}
 
 		to.Transaction.PreviousBalance = toAccount.Balance
@@ -157,17 +179,17 @@ func (r *exchangeRateRepo) Exchange(from *ExchangeRequest, to *ExchangeRequest) 
 
 		// create transaction id
 		if err := tx.Raw("SELECT generate_transaction_id(?);", to.WalletID).Scan(&to.Transaction.ID).Error; err != nil {
-			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err))
+			logger.GetLogger().Error("Error while generating transaction id", logger.Field("error", err), logger.Field("walletId", to.WalletID))
 			return err
 		}
 
 		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", to.WalletID, to.Transaction.TableName())).Create(to.Transaction).Error; err != nil {
-			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err))
+			logger.GetLogger().Error("Error while creating transaction", logger.Field("error", err), logger.Field("walletId", to.WalletID), logger.Field("transaction", to.Transaction))
 			return err
 		}
 
 		if err := tx.Table(fmt.Sprintf("%s_wallet.%s", to.WalletID, toAccount.TableName())).Save(toAccount).Error; err != nil {
-			logger.GetLogger().Error("Error while saving account", logger.Field("error", err))
+			logger.GetLogger().Error("Error while saving account", logger.Field("error", err), logger.Field("account", toAccount))
 			return err
 		}
 

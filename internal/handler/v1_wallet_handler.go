@@ -4,6 +4,7 @@ import (
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
+	"digital-wallet/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"math"
 )
@@ -33,7 +34,8 @@ func (h *v1walletHandler) Setup(group fiber.Router) {
 func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
 	var req service.CreateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	wallet, err := h.services.Wallet.CreateWallet(&req)
 	if err != nil {
@@ -67,7 +69,8 @@ func (h *v1walletHandler) UpdateWallet(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	var req service.UpdateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
-		return errs.NewBadRequestError("invalid request", err)
+		logger.GetLogger().Error("Invalid body request", logger.Field("error", err))
+		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
 	wallet, err := h.services.Wallet.UpdateWallet(id, &req)
 	if err != nil {
