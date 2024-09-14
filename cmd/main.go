@@ -1,7 +1,6 @@
 package main
 
 import (
-	"digital-wallet/internal/handler"
 	"digital-wallet/internal/repository"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"

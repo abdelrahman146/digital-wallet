@@ -141,7 +141,7 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	transaction, err := h.services.Transaction.CreateTransaction(c.Context(), walletId, accountId, model.TransactionActorTypeUser, "123", &req)
+	transaction, err := h.services.Transaction.CreateTransaction(c.Context(), walletId, accountId, model.AuditActorUser, "123", &req)
 	if err != nil {
 		return err
 	}
