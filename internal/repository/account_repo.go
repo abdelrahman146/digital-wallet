@@ -5,96 +5,110 @@ import (
 	"digital-wallet/internal/model"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/logger"
-	"fmt"
 	"gorm.io/gorm"
 )
 
 type AccountRepo interface {
-	CreateAccount(ctx context.Context, walletId string, account *model.Account) error
-	GetAccountByID(ctx context.Context, walletId string, accountId string) (*model.Account, error)
-	GetAccountByUserID(ctx context.Context, walletId string, userId string) (*model.Account, error)
-	GetAccounts(ctx context.Context, walletId string, page int, limit int) ([]model.Account, error)
-	GetTotalAccounts(ctx context.Context, walletId string) (int64, error)
-	GetAccountsSum(ctx context.Context, walletId string) (uint64, error)
-	DeleteAccount(ctx context.Context, walletId string, accountId string) error
+	// CreateAccount Creates a new account
+	CreateAccount(ctx context.Context, account *model.Account) error
+	// FetchAccountByID Retrieves an account by its account ID
+	FetchAccountByID(ctx context.Context, accountId string) (*model.Account, error)
+	// FetchAccountByUserID Retrieves an account by wallet ID and user ID
+	FetchAccountByUserID(ctx context.Context, walletId, userId string) (*model.Account, error)
+	// FetchWalletAccounts Retrieves a paginated list of accounts for a wallet
+	FetchWalletAccounts(ctx context.Context, walletId string, page int, limit int) ([]model.Account, error)
+	// CountWalletAccounts Retrieves the total number of accounts for a wallet
+	CountWalletAccounts(ctx context.Context, walletId string) (int64, error)
+	// SumWalletAccounts Retrieves the sum of account balances for a wallet
+	SumWalletAccounts(ctx context.Context, walletId string) (uint64, error)
+	// RemoveAccount Deletes an account
+	RemoveAccount(ctx context.Context, account *model.Account) error
 }
 
 type accountRepo struct {
 	db *gorm.DB
 }
 
+// NewAccountRepo initializes the account repository
 func NewAccountRepo(db *gorm.DB) AccountRepo {
 	return &accountRepo{db: db}
 }
 
-func (r *accountRepo) CreateAccount(ctx context.Context, walletId string, account *model.Account) error {
-	if err := r.db.Raw("SELECT generate_account_id(?);", walletId).Scan(&account.ID).Error; err != nil {
+// CreateAccount creates a new account and generates an account ID
+func (r *accountRepo) CreateAccount(ctx context.Context, account *model.Account) error {
+	// Generate account ID based on the wallet ID
+	if err := r.db.Raw("SELECT generate_account_id(?);", account.WalletID).Scan(&account.ID).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to generate account ID", logger.Field("error", err), logger.Field("account", account))
 		return err
 	}
-	if err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Create(account).Error; err != nil {
-		api.GetLogger(ctx).Error("failed to create account", logger.Field("error", err), logger.Field("account", account), logger.Field("walletId", walletId))
+	// Create the account
+	if err := r.db.Create(account).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to create account", logger.Field("error", err), logger.Field("account", account))
 		return err
 	}
 	return nil
 }
 
-func (r *accountRepo) GetAccountByUserID(ctx context.Context, walletId string, userId string) (*model.Account, error) {
+// FetchAccountByUserID retrieves an account by wallet ID and user ID
+func (r *accountRepo) FetchAccountByUserID(ctx context.Context, walletId, userId string) (*model.Account, error) {
 	var account model.Account
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("user_id = ?", userId).First(&account).Error
+	err := r.db.Where("wallet_id = ? AND user_id = ?", walletId, userId).First(&account).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("failed to get account by user id", logger.Field("error", err), logger.Field("userId", userId), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to retrieve account by user ID", logger.Field("error", err), logger.Field("userId", userId), logger.Field("walletId", walletId))
 		return nil, err
 	}
 	return &account, nil
 }
 
-func (r *accountRepo) GetAccountByID(ctx context.Context, walletId, accountId string) (*model.Account, error) {
+// FetchAccountByID retrieves an account by its account ID
+func (r *accountRepo) FetchAccountByID(ctx context.Context, accountId string) (*model.Account, error) {
 	var account model.Account
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("id = ?", accountId).First(&account).Error
+	err := r.db.Where("id = ?", accountId).First(&account).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("failed to get account by id", logger.Field("error", err), logger.Field("accountId", accountId), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to retrieve account by ID", logger.Field("error", err), logger.Field("accountId", accountId))
 		return nil, err
 	}
 	return &account, nil
 }
 
-func (r *accountRepo) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {
+// SumWalletAccounts retrieves the sum of balances for accounts in a wallet
+func (r *accountRepo) SumWalletAccounts(ctx context.Context, walletId string) (uint64, error) {
 	var sum uint64
-	var account model.Account
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Row().Scan(&sum)
+	err := r.db.Model(&model.Account{}).Select("COALESCE(SUM(balance), 0)").Where("wallet_id = ?", walletId).Scan(&sum).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("failed to get accounts sum", logger.Field("error", err), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to retrieve account balance sum", logger.Field("error", err), logger.Field("walletId", walletId))
 		return 0, err
 	}
 	return sum, nil
 }
 
-func (r *accountRepo) GetAccounts(ctx context.Context, walletId string, page int, limit int) ([]model.Account, error) {
+// FetchWalletAccounts retrieves a paginated list of accounts for a wallet
+func (r *accountRepo) FetchWalletAccounts(ctx context.Context, walletId string, page int, limit int) ([]model.Account, error) {
 	var accounts []model.Account
-	var account model.Account
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&accounts).Error
+	err := r.db.Where("wallet_id = ?", walletId).Order("created_at desc").
+		Offset((page - 1) * limit).Limit(limit).Find(&accounts).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("failed to get accounts", logger.Field("error", err), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to retrieve accounts", logger.Field("error", err), logger.Field("walletId", walletId))
 		return nil, err
 	}
 	return accounts, nil
 }
 
-func (r *accountRepo) GetTotalAccounts(ctx context.Context, walletId string) (int64, error) {
+// CountWalletAccounts retrieves the total number of accounts in a wallet
+func (r *accountRepo) CountWalletAccounts(ctx context.Context, walletId string) (int64, error) {
 	var total int64
-	account := &model.Account{}
-	err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Model(&model.Account{}).Count(&total).Error
+	err := r.db.Model(&model.Account{}).Where("wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("failed to get total accounts", logger.Field("error", err), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to retrieve total accounts", logger.Field("error", err), logger.Field("walletId", walletId))
 		return 0, err
 	}
 	return total, nil
 }
 
-func (r *accountRepo) DeleteAccount(ctx context.Context, walletId, accountId string) error {
-	account := &model.Account{}
-	if err := r.db.Table(fmt.Sprintf("%s_wallet.%s", walletId, account.TableName())).Where("id = ?", accountId).Delete(account).Error; err != nil {
-		api.GetLogger(ctx).Error("failed to delete account", logger.Field("error", err), logger.Field("accountId", accountId), logger.Field("walletId", walletId))
+// RemoveAccount deletes an account from the database
+func (r *accountRepo) RemoveAccount(ctx context.Context, account *model.Account) error {
+	if err := r.db.Delete(account).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete account", logger.Field("error", err), logger.Field("account", account))
 		return err
 	}
 	return nil

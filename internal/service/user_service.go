@@ -33,7 +33,7 @@ func (s *userService) CreateUser(ctx context.Context, req *CreateUserRequest) (*
 		api.GetLogger(ctx).Error("Invalid user request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid user request", "", fields)
 	}
-	user, _ := s.repos.User.GetUserByID(ctx, req.ID)
+	user, _ := s.repos.User.FetchUserByID(ctx, req.ID)
 	if user != nil {
 		api.GetLogger(ctx).Error("User already exists", logger.Field("userId", req.ID))
 		return nil, errs.NewConflictError("User already exists", "USER_ALREADY_EXISTS", nil)
@@ -49,7 +49,7 @@ func (s *userService) CreateUser(ctx context.Context, req *CreateUserRequest) (*
 }
 
 func (s *userService) GetUserByID(ctx context.Context, userId string) (*model.User, error) {
-	user, err := s.repos.User.GetUserByID(ctx, userId)
+	user, err := s.repos.User.FetchUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -57,23 +57,23 @@ func (s *userService) GetUserByID(ctx context.Context, userId string) (*model.Us
 }
 
 func (s *userService) SetUserTier(ctx context.Context, userId string, tierId string) (*model.User, error) {
-	user, err := s.repos.User.GetUserByID(ctx, userId)
+	user, err := s.repos.User.FetchUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 	user.TierID = tierId
-	if err := s.repos.User.SetUserTier(ctx, userId, tierId); err != nil {
+	if err := s.repos.User.UpdateUserTier(ctx, userId, tierId); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (s *userService) GetUsersByTierID(ctx context.Context, tierId string, page int, limit int) (*api.List[model.User], error) {
-	users, err := s.repos.User.GetUsersByTierID(ctx, tierId, page, limit)
+	users, err := s.repos.User.FetchUsersByTierID(ctx, tierId, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.User.GetTotalUsersByTierID(ctx, tierId)
+	total, err := s.repos.User.CountUsersByTierID(ctx, tierId)
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +82,11 @@ func (s *userService) GetUsersByTierID(ctx context.Context, tierId string, page 
 }
 
 func (s *userService) GetUsers(ctx context.Context, page int, limit int) (*api.List[model.User], error) {
-	users, err := s.repos.User.GetUsers(ctx, page, limit)
+	users, err := s.repos.User.FetchUsers(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.User.GetTotalUsers(ctx)
+	total, err := s.repos.User.CountTotalUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,5 +95,5 @@ func (s *userService) GetUsers(ctx context.Context, page int, limit int) (*api.L
 }
 
 func (s *userService) DeleteUser(ctx context.Context, userId string) error {
-	return s.repos.User.DeleteUser(ctx, userId)
+	return s.repos.User.RemoveUser(ctx, userId)
 }

@@ -26,7 +26,7 @@ func main() {
 	// Initialize the database connection
 	db := resources.InitDB()
 
-	// Create a new Fiber app
+	// CreateTransaction a new Fiber app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			status, resp := api.NewErrorResponse(err)

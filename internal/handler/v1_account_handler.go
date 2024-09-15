@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"digital-wallet/internal/model"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
@@ -39,7 +38,7 @@ func (h *v1AccountHandler) GetAccounts(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	accounts, err := h.services.Account.GetAccounts(c.Context(), walletId, page, limit)
+	accounts, err := h.services.Account.GetWalletAccounts(c.Context(), walletId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -48,7 +47,7 @@ func (h *v1AccountHandler) GetAccounts(c *fiber.Ctx) error {
 
 func (h *v1AccountHandler) GetAccountsSum(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
-	sum, err := h.services.Account.GetAccountsSum(c.Context(), walletId)
+	sum, err := h.services.Account.GetWalletAccountsSum(c.Context(), walletId)
 	if err != nil {
 		return err
 	}
@@ -141,7 +140,7 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
 		return errs.NewBadRequestError("Invalid body request", "INVALID_BODY_REQUEST", err)
 	}
-	transaction, err := h.services.Transaction.CreateTransaction(c.Context(), walletId, accountId, model.AuditActorUser, "123", &req)
+	transaction, err := h.services.Transaction.CreateTransaction(c.Context(), walletId, accountId, api.AppActorUser, "123", &req)
 	if err != nil {
 		return err
 	}

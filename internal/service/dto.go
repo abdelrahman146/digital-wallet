@@ -14,7 +14,7 @@ type ExchangeResponse struct {
 type CreateExchangeRateRequest struct {
 	FromWalletID string          `json:"fromWalletId,omitempty" validate:"required"`
 	ToWalletID   string          `json:"toWalletId,omitempty" validate:"required"`
-	TierID       string          `json:"tierId,omitempty" validate:"required"`
+	TierID       *string         `json:"tierId,omitempty"`
 	ExchangeRate decimal.Decimal `json:"exchangeRate,omitempty" validate:"required"`
 }
 

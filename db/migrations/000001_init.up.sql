@@ -17,12 +17,11 @@ BEGIN
     SELECT concat_ws(
                    '-',
                    'TX',
-                   to_hex(trunc(extract(epoch from clock_timestamp()) * 1000)::bigint),
-                   lpad(to_hex(floor(random() * power(2, 16))::bigint), 4, '0')
+                   upper(to_hex(trunc(extract(epoch from clock_timestamp()) * 1000)::bigint)),
+                   upper(lpad(to_hex(floor(random() * power(2, 16))::bigint), 4, '0'))
            )
     INTO cuid;
-
-    RETURN upper(cuid);
+    RETURN cuid;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -33,9 +32,9 @@ CREATE TABLE IF NOT EXISTS audit
     table_name TEXT                           NOT NULL,
     record_id  TEXT                           NOT NULL,
     actor      TEXT                           NOT NULL,
-    actor_id   TEXT                           NOT NULL,
-    remark     TEXT                           NOT NULL,
-    old_record JSONB                          NOT NULL,
+    actor_id   TEXT,
+    remarks    TEXT,
+    old_record JSONB,
     new_record JSONB                          NOT NULL,
     created_at TIMESTAMP        DEFAULT NOW() NOT NULL,
     CONSTRAINT check_audit_valid_operation CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE'))
@@ -43,15 +42,20 @@ CREATE TABLE IF NOT EXISTS audit
 
 CREATE TABLE IF NOT EXISTS audit_part_2024_2 PARTITION OF audit
     FOR VALUES FROM ('2024-07-01') TO ('2024-12-31');
-
 CREATE TABLE IF NOT EXISTS audit_part_2025_1 PARTITION OF audit
     FOR VALUES FROM ('2025-01-01') TO ('2025-06-30');
-
 CREATE TABLE IF NOT EXISTS audit_part_2025_2 PARTITION OF audit
     FOR VALUES FROM ('2025-07-01') TO ('2025-12-31');
+CREATE TABLE IF NOT EXISTS audit_part_2026_1 PARTITION OF audit
+    FOR VALUES FROM ('2026-01-01') TO ('2026-06-30');
+CREATE TABLE IF NOT EXISTS audit_part_2026_2 PARTITION OF audit
+    FOR VALUES FROM ('2026-07-01') TO ('2026-12-31');
 
 CREATE INDEX IF NOT EXISTS audit_operation_at_idx ON audit (created_at);
 CREATE INDEX IF NOT EXISTS audit_table_name_idx ON audit (table_name);
+CREATE INDEX IF NOT EXISTS audit_record_id_idx ON audit (record_id);
+CREATE INDEX IF NOT EXISTS audit_actor_idx ON audit (actor);
+CREATE INDEX IF NOT EXISTS audit_actor_id_idx ON audit (actor_id);
 
 
 CREATE TABLE IF NOT EXISTS wallets
@@ -60,7 +64,7 @@ CREATE TABLE IF NOT EXISTS wallets
     name                TEXT UNIQUE NOT NULL,
     description         TEXT,
     currency            TEXT        NOT NULL CHECK ( currency ~ '^[a-zA-Z]+$'),
-    points_expire_after INTERVAL,                               -- NULL means points never expire
+    points_expire_after INTERVAL SECOND(0),                     -- NULL means points never expire
     limit_per_user      BIGINT CHECK (limit_per_user >= 0),     -- NULL means no limit
     limit_global        BIGINT CHECK (limit_global >= 0),       -- NULL means no limit
     minimum_withdrawal  BIGINT CHECK (minimum_withdrawal >= 0), -- NULL means no minimum
@@ -132,14 +136,15 @@ CREATE TABLE IF NOT EXISTS programs
 
 CREATE TABLE IF NOT EXISTS accounts
 (
-    id         TEXT PRIMARY KEY DEFAULT generate_account_id(wallet_id),
-    wallet_id  TEXT REFERENCES wallets (id) ON DELETE CASCADE      NOT NULL,
-    user_id    TEXT REFERENCES users (id) ON DELETE CASCADE UNIQUE NOT NULL,
+    id         TEXT PRIMARY KEY DEFAULT generate_account_id(wallet_id) CHECK (length(id) > 9),
+    wallet_id  TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
+    user_id    TEXT REFERENCES users (id) ON DELETE CASCADE   NOT NULL,
     balance    BIGINT           DEFAULT 0 CHECK (balance >= 0),
-    version    BIGINT           DEFAULT 0                          NOT NULL CHECK (version >= 0),
-    is_active  BOOLEAN          DEFAULT TRUE                       NOT NULL,
-    created_at TIMESTAMP        DEFAULT NOW()                      NOT NULL,
-    updated_at TIMESTAMP        DEFAULT NOW()                      NOT NULL
+    version    BIGINT           DEFAULT 0                     NOT NULL CHECK (version >= 0),
+    is_active  BOOLEAN          DEFAULT TRUE                  NOT NULL,
+    created_at TIMESTAMP        DEFAULT NOW()                 NOT NULL,
+    updated_at TIMESTAMP        DEFAULT NOW()                 NOT NULL,
+    CONSTRAINT unique_wallet_user UNIQUE (wallet_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS transactions
@@ -151,14 +156,27 @@ CREATE TABLE IF NOT EXISTS transactions
     metadata         JSONB,
     program_id       INT                                             REFERENCES programs (id) ON DELETE SET NULL,
     amount           BIGINT                                          NOT NULL,
+    available_amount BIGINT           DEFAULT 0                      NOT NULL, -- amount after expiry or debit
     expire_at        TIMESTAMP,
-    previous_balance BIGINT           DEFAULT 0                      NOT NULL CHECK (previous_balance >= 0),
-    new_balance      BIGINT           DEFAULT 0                      NOT NULL CHECK (new_balance >= 0),
     version          BIGINT           DEFAULT 0                      NOT NULL CHECK (version >= 0),
     created_at       TIMESTAMP        DEFAULT NOW()                  NOT NULL,
-    CONSTRAINT check_transaction_type CHECK (type IN ('CREDIT', 'DEBIT')),
-    CONSTRAINT check_credit_debit_balance CHECK (
-        (type = 'CREDIT' AND amount + previous_balance = new_balance) OR
-        (type = 'DEBIT' AND previous_balance - amount = new_balance)
-        )
+    CONSTRAINT check_transaction_type CHECK (type IN ('CREDIT', 'DEBIT'))
 ) PARTITION BY HASH (id);
+
+CREATE TABLE IF NOT EXISTS transactions_part_1 PARTITION OF transactions
+    FOR VALUES WITH (MODULUS 5, REMAINDER 0);
+CREATE TABLE IF NOT EXISTS transactions_part_2 PARTITION OF transactions
+    FOR VALUES WITH (MODULUS 5, REMAINDER 1);
+CREATE TABLE IF NOT EXISTS transactions_part_3 PARTITION OF transactions
+    FOR VALUES WITH (MODULUS 5, REMAINDER 2);
+CREATE TABLE IF NOT EXISTS transactions_part_4 PARTITION OF transactions
+    FOR VALUES WITH (MODULUS 5, REMAINDER 3);
+CREATE TABLE IF NOT EXISTS transactions_part_5 PARTITION OF transactions
+    FOR VALUES WITH (MODULUS 5, REMAINDER 4);
+
+CREATE INDEX IF NOT EXISTS transactions_wallet_id_idx ON transactions (wallet_id);
+CREATE INDEX IF NOT EXISTS transactions_account_id_idx ON transactions (account_id);
+CREATE INDEX IF NOT EXISTS transactions_program_id_idx ON transactions (program_id);
+CREATE INDEX IF NOT EXISTS transactions_expire_at_idx ON transactions (expire_at);
+CREATE INDEX IF NOT EXISTS transactions_created_at_idx ON transactions (created_at);
+CREATE INDEX IF NOT EXISTS transactions_type_idx ON transactions (type);

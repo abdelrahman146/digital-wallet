@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"digital-wallet/internal/model"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
@@ -113,7 +112,7 @@ func (h *v1ExchangeRateHandler) Exchange(c *fiber.Ctx) error {
 		return errs.NewValidationError("Invalid request", "", fields)
 	}
 
-	exchangeResponse, err := h.services.ExchangeRate.Exchange(c.Context(), fromWalletId, req.ToWalletID, req.UserID, model.AuditActorUser, req.UserID, req.Amount)
+	exchangeResponse, err := h.services.ExchangeRate.Exchange(c.Context(), fromWalletId, req.ToWalletID, req.UserID, api.AppActorUser, req.UserID, req.Amount)
 	if err != nil {
 		return err
 	}

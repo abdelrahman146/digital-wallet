@@ -32,11 +32,11 @@ func (s *transactionService) CreateTransaction(ctx context.Context, walletId, ac
 		api.GetLogger(ctx).Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid transaction request", "", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		return nil, errs.NewNotFoundError("wallet not found", "WALLET_NOT_FOUND", err)
 	}
-	account, _ := s.repos.Account.GetAccountByID(ctx, walletId, accountId)
+	account, _ := s.repos.Account.FetchAccountByID(ctx, walletId, accountId)
 	if account == nil {
 		return nil, errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
@@ -54,28 +54,28 @@ func (s *transactionService) CreateTransaction(ctx context.Context, walletId, ac
 	case "debit":
 		transaction.Type = model.TransactionTypeDebit
 	}
-	if err := s.repos.Transaction.Create(ctx, walletId, transaction, account.Version); err != nil {
+	if err := s.repos.Transaction.CreateTransaction(ctx, walletId, transaction, account.Version); err != nil {
 		return nil, err
 	}
 	return transaction, nil
 }
 
 func (s *transactionService) GetTransactionsByAccountID(ctx context.Context, walletId, accountId string, page int, limit int) (*api.List[model.Transaction], error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		api.GetLogger(ctx).Error("Wallet not found", logger.Field("walletId", walletId))
 		return nil, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
-	account, err := s.repos.Account.GetAccountByID(ctx, walletId, accountId)
+	account, err := s.repos.Account.FetchAccountByID(ctx, walletId, accountId)
 	if account == nil {
 		api.GetLogger(ctx).Error("Account not found", logger.Field("walletId", walletId), logger.Field("accountId", accountId))
 		return nil, errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
-	transactions, err := s.repos.Transaction.GetTransactionsByAccountID(ctx, walletId, accountId, page, limit)
+	transactions, err := s.repos.Transaction.FetchAccountTransactions(ctx, walletId, accountId, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.Transaction.GetTotalTransactionsByAccountID(ctx, walletId, accountId)
+	total, err := s.repos.Transaction.CountAccountTransactions(ctx, walletId, accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -83,31 +83,31 @@ func (s *transactionService) GetTransactionsByAccountID(ctx context.Context, wal
 }
 
 func (s *transactionService) GetTransactionsSumByAccountID(ctx context.Context, walletId, accountId string) (uint64, error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		api.GetLogger(ctx).Error("Wallet not found", logger.Field("walletId", walletId))
 		return 0, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
-	account, err := s.repos.Account.GetAccountByID(ctx, walletId, accountId)
+	account, err := s.repos.Account.FetchAccountByID(ctx, walletId, accountId)
 	if account == nil {
 		api.GetLogger(ctx).Error("Account not found", logger.Field("walletId", walletId), logger.Field("accountId", accountId))
 		return 0, errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
-	sum, err := s.repos.Transaction.GetTransactionsSumByAccountID(ctx, walletId, accountId)
+	sum, err := s.repos.Transaction.SumAccountTransactions(ctx, walletId, accountId)
 	return sum, err
 }
 
 func (s *transactionService) GetTransactions(ctx context.Context, walletId string, page int, limit int) (*api.List[model.Transaction], error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		api.GetLogger(ctx).Error("Wallet not found", logger.Field("walletId", walletId))
 		return nil, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)
 	}
-	transactions, err := s.repos.Transaction.GetTransactions(ctx, walletId, page, limit)
+	transactions, err := s.repos.Transaction.FetchWalletTransactions(ctx, walletId, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.Transaction.GetTotalTransactions(ctx, walletId)
+	total, err := s.repos.Transaction.CountWalletTransactions(ctx, walletId)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *transactionService) GetTransactions(ctx context.Context, walletId strin
 }
 
 func (s *transactionService) GetTransactionsSum(ctx context.Context, walletId string) (uint64, error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		api.GetLogger(ctx).Error("Wallet not found", logger.Field("walletId", walletId))
 		return 0, errs.NewNotFoundError("Wallet not found", "WALLET_NOT_FOUND", err)

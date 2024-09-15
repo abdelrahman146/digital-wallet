@@ -60,7 +60,7 @@ func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *
 		api.GetLogger(ctx).Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
 		return nil, errs.NewValidationError("Invalid transaction request", "", fields)
 	}
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *
 }
 
 func (s *walletService) GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error) {
-	wallet, err := s.repos.Wallet.GetWalletByID(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
 	if wallet == nil {
 		return nil, errs.NewNotFoundError("wallet not found", "WALLET_NOT_FOUND", err)
 	}
@@ -91,11 +91,11 @@ func (s *walletService) GetWalletByID(ctx context.Context, walletId string) (*mo
 }
 
 func (s *walletService) GetWallets(ctx context.Context, page int, limit int) (*api.List[model.Wallet], error) {
-	wallets, err := s.repos.Wallet.GetWallets(ctx, page, limit)
+	wallets, err := s.repos.Wallet.FetchWallets(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.Wallet.GetTotalWallets(ctx)
+	total, err := s.repos.Wallet.CountTotalWallets(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +103,11 @@ func (s *walletService) GetWallets(ctx context.Context, page int, limit int) (*a
 }
 
 func (s *walletService) DeleteWallet(ctx context.Context, walletId string) error {
-	return s.repos.Wallet.DeleteWallet(ctx, walletId)
+	return s.repos.Wallet.RemoveWallet(ctx, walletId)
 }
 
 func (s *walletService) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {
-	return s.repos.Account.GetAccountsSum(ctx, walletId)
+	return s.repos.Account.SumWalletAccounts(ctx, walletId)
 }
 
 func (s *walletService) GetTransactionsSum(ctx context.Context, walletId string) (uint64, error) {

@@ -22,3 +22,15 @@ func (a *JSONB) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &a)
 }
+
+func (a *JSONB) StructToJSONB(value interface{}) error {
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(bytes, &a)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -18,6 +18,7 @@ type Transaction struct {
 	Metadata        types.JSONB `gorm:"column:metadata;type:jsonb" json:"metadata"`
 	ProgramID       *string     `gorm:"column:program_id" json:"programId"`
 	Amount          uint64      `gorm:"column:amount" json:"amount"`
+	AvailableAmount uint64      `gorm:"column:available_amount" json:"availableAmount"`
 	ExpireAt        *time.Time  `gorm:"column:expire_at" json:"expireAt"`
 	PreviousBalance uint64      `gorm:"column:previous_balance" json:"previousBalance"`
 	NewBalance      uint64      `gorm:"column:new_balance" json:"newBalance"`
