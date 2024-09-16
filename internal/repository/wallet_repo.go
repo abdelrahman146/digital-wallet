@@ -20,7 +20,7 @@ type WalletRepo interface {
 	// CountTotalWallets Retrieves the total number of wallets
 	CountTotalWallets(ctx context.Context) (int64, error)
 	// RemoveWallet Deletes a wallet by its wallet ID
-	RemoveWallet(ctx context.Context, walletId string) error
+	RemoveWallet(ctx context.Context, wallet *model.Wallet) error
 }
 
 type walletRepo struct {
@@ -92,9 +92,9 @@ func (r *walletRepo) CountTotalWallets(ctx context.Context) (int64, error) {
 }
 
 // RemoveWallet deletes a wallet from the database by its wallet ID
-func (r *walletRepo) RemoveWallet(ctx context.Context, walletId string) error {
-	if err := r.db.Where("id = ?", walletId).Delete(&model.Wallet{}).Error; err != nil {
-		api.GetLogger(ctx).Error("Failed to delete wallet", logger.Field("error", err), logger.Field("walletId", walletId))
+func (r *walletRepo) RemoveWallet(ctx context.Context, wallet *model.Wallet) error {
+	if err := r.db.Delete(wallet).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
 	return nil

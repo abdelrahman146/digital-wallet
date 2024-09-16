@@ -38,7 +38,7 @@ func (m *Trigger) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Trigger) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
 	if err != nil {
 		return err
 	}

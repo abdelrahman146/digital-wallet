@@ -24,7 +24,7 @@ type UserRepo interface {
 	// CountTotalUsers Retrieves the total number of users
 	CountTotalUsers(ctx context.Context) (int64, error)
 	// RemoveUser Deletes a user by user ID
-	RemoveUser(ctx context.Context, userId string) error
+	RemoveUser(ctx context.Context, user *model.User) error
 }
 
 type userRepo struct {
@@ -110,9 +110,9 @@ func (r *userRepo) CountTotalUsers(ctx context.Context) (int64, error) {
 }
 
 // RemoveUser deletes a user by user ID
-func (r *userRepo) RemoveUser(ctx context.Context, userId string) error {
-	if err := r.db.Where("id = ?", userId).Delete(&model.User{}).Error; err != nil {
-		api.GetLogger(ctx).Error("Failed to delete user", logger.Field("error", err), logger.Field("userId", userId))
+func (r *userRepo) RemoveUser(ctx context.Context, user *model.User) error {
+	if err := r.db.Delete(user).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete user", logger.Field("error", err), logger.Field("user", user))
 		return err
 	}
 	return nil

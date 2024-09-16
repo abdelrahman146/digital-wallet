@@ -37,6 +37,8 @@ func (s *tierService) CreateTier(ctx context.Context, req *CreateTierRequest) (*
 		ID:   req.ID,
 		Name: req.Name,
 	}
+	tier.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	tier.SetRemarks("Tier created")
 	if err := s.repos.Tier.CreateTier(ctx, tier); err != nil {
 		return nil, err
 	}
@@ -65,5 +67,16 @@ func (s *tierService) GetTiers(ctx context.Context, page int, limit int) (*api.L
 }
 
 func (s *tierService) DeleteTier(ctx context.Context, tierId string) error {
-	return s.repos.Tier.DeleteTier(ctx, tierId)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return err
+	}
+	tier, err := s.repos.Tier.GetTierByID(ctx, tierId)
+	if err != nil {
+		return err
+	}
+	tier.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	tier.SetRemarks("Tier deleted")
+	tier.SetOldRecord(tier)
+	return s.repos.Tier.DeleteTier(ctx, tier)
 }

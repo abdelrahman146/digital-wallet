@@ -18,9 +18,9 @@ type Audit struct {
 	RecordID  string       `gorm:"column:record_id" json:"recordId"`
 	Actor     string       `gorm:"column:actor" json:"actor"`
 	ActorID   *string      `gorm:"column:actor_id" json:"actorId"`
-	Remark    *string      `gorm:"column:remarks" json:"remarks"`
+	Remarks   *string      `gorm:"column:remarks" json:"remarks"`
 	OldRecord *types.JSONB `gorm:"column:old_record" json:"oldRecord"`
-	NewRecord types.JSONB  `gorm:"column:new_record" json:"newRecord"`
+	NewRecord *types.JSONB `gorm:"column:new_record" json:"newRecord"`
 	CreatedAt time.Time    `gorm:"column:created_at" json:"createdAt"`
 }
 

@@ -67,6 +67,8 @@ func (s *transactionService) CreateTransaction(ctx context.Context, walletId, ac
 		Metadata:  req.Metadata,
 		ProgramID: req.ProgramID,
 	}
+	transaction.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	transaction.SetRemarks("Transaction created")
 	if req.Type == model.TransactionTypeCredit && wallet.PointsExpireAfter != nil {
 		expireAt := time.Now().Add(wallet.PointsExpireAfter.Duration())
 		transaction.ExpireAt = &expireAt
@@ -160,6 +162,8 @@ func (s *transactionService) Exchange(ctx context.Context, fromWalletId, toWalle
 	fromTransaction.Metadata = make(types.JSONB)
 	fromTransaction.Metadata["toWalletId"] = toWalletId
 	fromTransaction.Metadata["toAccountId"] = toAccount.ID
+	fromTransaction.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	fromTransaction.SetRemarks("Exchange transaction created to wallet " + toWalletId)
 
 	// Setup To Transaction
 	amountToCredit := decimal.NewFromUint64(amount)
@@ -181,6 +185,8 @@ func (s *transactionService) Exchange(ctx context.Context, fromWalletId, toWalle
 	toTransaction.Metadata["fromAccountId"] = fromAccount.ID
 	toTransaction.Metadata["ExchangedAmount"] = amount
 	toTransaction.Metadata["exchangeRate"] = exchangeRate.ExchangeRate.String()
+	toTransaction.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	toTransaction.SetRemarks("Exchange transaction created from wallet " + fromWalletId)
 
 	if toWallet.PointsExpireAfter != nil {
 		expireAt := time.Now().Add(toWallet.PointsExpireAfter.Duration())

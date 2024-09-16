@@ -40,7 +40,7 @@ func (m *ExchangeRate) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *ExchangeRate) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
 	if err != nil {
 		return err
 	}

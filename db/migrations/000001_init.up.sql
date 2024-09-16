@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS audit
     actor_id   TEXT,
     remarks    TEXT,
     old_record JSONB,
-    new_record JSONB                          NOT NULL,
+    new_record JSONB,
     created_at TIMESTAMP        DEFAULT NOW() NOT NULL,
     CONSTRAINT check_audit_valid_operation CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE'))
 ) PARTITION BY RANGE (created_at);

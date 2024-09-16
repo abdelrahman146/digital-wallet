@@ -56,6 +56,8 @@ func (s *walletService) CreateWallet(ctx context.Context, req *CreateWalletReque
 		IsMonetary:   req.IsMonetary,
 		LimitGlobal:  req.LimitGlobal,
 	}
+	wallet.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	wallet.SetRemarks("Wallet created")
 	if req.PointsExpireAfter != nil {
 		pointsExpireAfter := types.Interval(time.Duration(*req.PointsExpireAfter) * time.Millisecond)
 		wallet.PointsExpireAfter = &pointsExpireAfter
@@ -80,6 +82,9 @@ func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *
 	if err != nil {
 		return nil, err
 	}
+	wallet.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	wallet.SetRemarks("Wallet updated")
+	wallet.SetOldRecord(*wallet)
 	wallet.Name = req.Name
 	wallet.Description = req.Description
 	wallet.Currency = req.Currency
@@ -92,6 +97,7 @@ func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *
 		pointsExpireAfter := types.Interval(time.Duration(*req.PointsExpireAfter) * time.Millisecond)
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
+
 	if err := s.repos.Wallet.UpdateWallet(ctx, wallet); err != nil {
 		return nil, err
 	}
@@ -123,7 +129,15 @@ func (s *walletService) DeleteWallet(ctx context.Context, walletId string) error
 		api.GetLogger(ctx).Error("User not authorized")
 		return err
 	}
-	return s.repos.Wallet.RemoveWallet(ctx, walletId)
+	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
+	if wallet == nil {
+		api.GetLogger(ctx).Error("Wallet not found", logger.Field("walletId", walletId), logger.Field("error", err))
+		return errs.NewNotFoundError("wallet not found", "WALLET_NOT_FOUND", err)
+	}
+	wallet.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	wallet.SetRemarks("Wallet deleted")
+	wallet.SetOldRecord(*wallet)
+	return s.repos.Wallet.RemoveWallet(ctx, wallet)
 }
 
 func (s *walletService) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {

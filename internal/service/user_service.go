@@ -96,5 +96,17 @@ func (s *userService) GetUsers(ctx context.Context, page int, limit int) (*api.L
 }
 
 func (s *userService) DeleteUser(ctx context.Context, userId string) error {
-	return s.repos.User.RemoveUser(ctx, userId)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return err
+	}
+	user, err := s.repos.User.FetchUserByID(ctx, userId)
+	if user == nil {
+		api.GetLogger(ctx).Error("User not found", logger.Field("userId", userId), logger.Field("error", err))
+		return errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
+	}
+	user.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	user.SetRemarks("User deleted")
+	user.SetOldRecord(*user)
+	return s.repos.User.RemoveUser(ctx, user)
 }

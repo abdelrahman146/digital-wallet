@@ -36,21 +36,23 @@ func (a *Auditable) GetOldRecord() interface{} {
 
 func (a *Auditable) CreateAudit(operation string, recordId string, newRecord interface{}) (*Audit, error) {
 	var oldRecordJSON *types.JSONB
-	var newRecordJSON types.JSONB
+	var newRecordJSON *types.JSONB
 	if a.oldRecord != nil {
 		if err := oldRecordJSON.StructToJSONB(a.oldRecord); err != nil {
 			return nil, err
 		}
 	}
-	if err := newRecordJSON.StructToJSONB(newRecord); err != nil {
-		return nil, err
+	if newRecord != nil {
+		if err := newRecordJSON.StructToJSONB(newRecord); err != nil {
+			return nil, err
+		}
 	}
 	return &Audit{
 		Actor:     a.actor,
 		ActorID:   a.actorId,
 		Operation: operation,
 		RecordID:  recordId,
-		Remark:    a.remarks,
+		Remarks:   a.remarks,
 		OldRecord: oldRecordJSON,
 		NewRecord: newRecordJSON,
 	}, nil

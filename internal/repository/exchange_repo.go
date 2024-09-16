@@ -26,7 +26,7 @@ type ExchangeRateRepo interface {
 	// UpdateExchangeRate Updates an existing exchange rate
 	UpdateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
 	// RemoveExchangeRate Deletes an exchange rate by its ID
-	RemoveExchangeRate(ctx context.Context, exchangeRateId string) error
+	RemoveExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
 }
 
 type exchangeRateRepo struct {
@@ -111,10 +111,10 @@ func (r *exchangeRateRepo) UpdateExchangeRate(ctx context.Context, exchangeRate 
 	return nil
 }
 
-// RemoveExchangeRate deletes an exchange rate by its ID
-func (r *exchangeRateRepo) RemoveExchangeRate(ctx context.Context, exchangeRateId string) error {
-	if err := r.db.Where("id = ?", exchangeRateId).Delete(&model.ExchangeRate{}).Error; err != nil {
-		api.GetLogger(ctx).Error("Failed to delete exchange rate", logger.Field("error", err), logger.Field("exchangeRateId", exchangeRateId))
+// RemoveExchangeRate deletes an exchange rate
+func (r *exchangeRateRepo) RemoveExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
+	if err := r.db.Delete(exchangeRate).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
 		return err
 	}
 	return nil

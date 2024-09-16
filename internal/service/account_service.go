@@ -113,5 +113,8 @@ func (s *accountService) DeleteAccount(ctx context.Context, accountId string) er
 	if account == nil {
 		return errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
+	account.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	account.SetRemarks("Account deleted")
+	account.SetOldRecord(account)
 	return s.repos.Account.RemoveAccount(ctx, account)
 }

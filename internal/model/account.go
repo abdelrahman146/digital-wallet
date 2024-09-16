@@ -38,7 +38,7 @@ func (m *Account) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Account) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, m)
+	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, nil)
 	if err != nil {
 		return err
 	}
