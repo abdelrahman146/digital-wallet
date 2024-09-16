@@ -1,6 +1,9 @@
 package model
 
-import "digital-wallet/pkg/types"
+import (
+	"digital-wallet/pkg/types"
+	"time"
+)
 
 const (
 	AuditOperationCreate = "CREATE"
@@ -18,6 +21,7 @@ type Audit struct {
 	Remark    *string      `gorm:"column:remarks" json:"remarks"`
 	OldRecord *types.JSONB `gorm:"column:old_record" json:"oldRecord"`
 	NewRecord types.JSONB  `gorm:"column:new_record" json:"newRecord"`
+	CreatedAt time.Time    `gorm:"column:created_at" json:"createdAt"`
 }
 
 func (Audit) TableName() string {
