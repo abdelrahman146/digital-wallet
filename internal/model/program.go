@@ -2,10 +2,13 @@ package model
 
 import (
 	"digital-wallet/pkg/types"
+	"gorm.io/gorm"
+	"strconv"
 	"time"
 )
 
 type Program struct {
+	Auditable
 	ID           uint64      `json:"id" gorm:"column:id;primaryKey"`
 	Name         string      `json:"name" gorm:"column:name"`
 	WalletID     string      `json:"walletId" gorm:"column:wallet_id"`
@@ -21,6 +24,30 @@ type Program struct {
 	UpdatedAt    time.Time   `json:"updatedAt" gorm:"column:updated_at"`
 }
 
-func (Program) TableName() string {
+func (m *Program) TableName() string {
 	return "programs"
+}
+
+func (m *Program) AfterCreate(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationCreate, strconv.FormatUint(m.ID, 10), m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
+}
+
+func (m *Program) AfterUpdate(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationUpdate, strconv.FormatUint(m.ID, 10), m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
+}
+
+func (m *Program) AfterDelete(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
 }

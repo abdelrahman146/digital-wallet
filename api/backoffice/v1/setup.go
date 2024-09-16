@@ -10,6 +10,7 @@ func New(app *fiber.App, services *service.Services) {
 	group := app.Group("api/v1/backoffice/")
 	group.Use(api.AdminAuthenticationMiddleware())
 	group.Use(api.CreateAppContext(api.AppActorAdmin))
+	NewAuditHandler(group, services)
 	NewAccountHandler(group, services)
 	NewExchangeRateHandler(group, services)
 	NewTierHandler(group, services)

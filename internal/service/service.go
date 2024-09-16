@@ -1,6 +1,7 @@
 package service
 
 type Services struct {
+	Audit        AuditService
 	Transaction  TransactionService
 	Account      AccountService
 	Wallet       WalletService

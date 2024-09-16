@@ -2,6 +2,7 @@ package model
 
 import (
 	"digital-wallet/pkg/types"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -21,6 +22,7 @@ const (
 )
 
 type Transaction struct {
+	Auditable
 	ID              string      `gorm:"column:id;primaryKey" json:"id"`
 	Type            string      `gorm:"column:type" json:"type"`
 	WalletID        string      `gorm:"column:wallet_id" json:"walletId"`
@@ -37,6 +39,30 @@ type Transaction struct {
 	CreatedAt       time.Time   `gorm:"column:created_at" json:"createdAt"`
 }
 
-func (Transaction) TableName() string {
+func (m *Transaction) TableName() string {
 	return "transactions"
+}
+
+func (m *Transaction) AfterCreate(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationCreate, m.ID, m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
+}
+
+func (m *Transaction) AfterUpdate(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationUpdate, m.ID, m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
+}
+
+func (m *Transaction) AfterDelete(tx *gorm.DB) error {
+	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, m)
+	if err != nil {
+		return err
+	}
+	return tx.Create(audit).Error
 }
