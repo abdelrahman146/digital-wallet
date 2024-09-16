@@ -1,6 +1,7 @@
 package main
 
 import (
+	backofficev1 "digital-wallet/api/backoffice/v1"
 	"digital-wallet/internal/repository"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
@@ -45,9 +46,6 @@ func main() {
 	}))
 	app.Use(requestid.New())
 
-	// Custom middleware to create app context
-	app.Use(api.CreateAppContext())
-
 	app.Get("/metrics", monitor.New())
 	app.Use(fiberLogger.New(fiberLogger.Config{
 		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
@@ -73,15 +71,8 @@ func main() {
 		ExchangeRate: service.NewExchangeRateService(repos),
 	}
 
-	// Define versioned routes
-	v1 := app.Group("/v1")
-
-	handler.NewV1WalletHandler(v1, services)
-	handler.NewV1AccountHandler(v1, services)
-	handler.NewV1TransactionsHandler(v1, services)
-	handler.NewV1ExchangeRateHandler(v1, services)
-	handler.NewV1TierHandler(v1, services)
-	handler.NewV1UserHandler(v1, services)
+	// Define routes
+	backofficev1.New(app, services)
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {

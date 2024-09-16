@@ -15,7 +15,7 @@ import (
 
 type TransactionService interface {
 	// CreateTransaction creates a transaction
-	CreateTransaction(ctx context.Context, walletId, accountId, actorType, actorId string, req *TransactionRequest) (*model.Transaction, error)
+	CreateTransaction(ctx context.Context, walletId, accountId string, req *TransactionRequest) (*model.Transaction, error)
 	// Exchange exchanges between two accounts for the same user
 	Exchange(ctx context.Context, fromWalletId, toWalletId, userId string, amount uint64) (*ExchangeResponse, error)
 	// GetAccountTransactions returns a list of transactions for an account
@@ -40,7 +40,7 @@ func NewTransactionService(repos *repository.Repos) TransactionService {
 	return &transactionService{repos: repos}
 }
 
-func (s *transactionService) CreateTransaction(ctx context.Context, walletId, accountId, actorType, actorId string, req *TransactionRequest) (*model.Transaction, error) {
+func (s *transactionService) CreateTransaction(ctx context.Context, walletId, accountId string, req *TransactionRequest) (*model.Transaction, error) {
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		api.GetLogger(ctx).Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
@@ -256,7 +256,7 @@ func (s *transactionService) GetAccountTransactionSum(ctx context.Context, walle
 
 func (s *transactionService) GetWalletTransactions(ctx context.Context, walletId string, page int, limit int) (*api.List[model.Transaction], error) {
 	if err := api.IsAdmin(ctx); err != nil {
-		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetUserID(ctx)))
+		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetActorID(ctx)))
 		return nil, err
 	}
 	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
@@ -277,7 +277,7 @@ func (s *transactionService) GetWalletTransactions(ctx context.Context, walletId
 
 func (s *transactionService) GetWalletTransactionSum(ctx context.Context, walletId string) (uint64, error) {
 	if err := api.IsAdmin(ctx); err != nil {
-		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetUserID(ctx)))
+		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetActorID(ctx)))
 		return 0, err
 	}
 	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)
@@ -320,7 +320,7 @@ func (s *transactionService) GetAccountExpiringTransactionsSum(ctx context.Conte
 
 func (s *transactionService) GetExpiredWalletTransactions(ctx context.Context, walletId string) ([]model.Transaction, error) {
 	if err := api.IsAdmin(ctx); err != nil {
-		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetUserID(ctx)))
+		api.GetLogger(ctx).Error("Unauthorized", logger.Field("actor", api.GetActor(ctx)), logger.Field("userId", api.GetActorID(ctx)))
 		return nil, err
 	}
 	wallet, err := s.repos.Wallet.FetchWalletByID(ctx, walletId)

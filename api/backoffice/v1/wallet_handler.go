@@ -1,4 +1,4 @@
-package handler
+package backofficev1
 
 import (
 	"digital-wallet/internal/service"
@@ -9,19 +9,19 @@ import (
 	"math"
 )
 
-type v1walletHandler struct {
+type walletHandler struct {
 	services *service.Services
 }
 
-func NewV1WalletHandler(appGroup fiber.Router, services *service.Services) {
-	group := appGroup.Group("/wallets")
-	handler := &v1walletHandler{
+func NewWalletHandler(appGroup fiber.Router, services *service.Services) {
+	handler := &walletHandler{
 		services: services,
 	}
-	handler.Setup(group)
+	handler.Setup(appGroup)
 }
 
-func (h *v1walletHandler) Setup(group fiber.Router) {
+func (h *walletHandler) Setup(appGroup fiber.Router) {
+	group := appGroup.Group("wallets")
 	group.Post("/", h.CreateWallet)
 	group.Get("/", h.GetWallets)
 	group.Get("/:walletId/check-integrity", h.CheckWalletIntegrity)
@@ -31,7 +31,7 @@ func (h *v1walletHandler) Setup(group fiber.Router) {
 
 }
 
-func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
+func (h *walletHandler) CreateWallet(c *fiber.Ctx) error {
 	var req service.CreateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
 		api.GetLogger(c.Context()).Error("Invalid body request", logger.Field("error", err))
@@ -44,7 +44,7 @@ func (h *v1walletHandler) CreateWallet(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(wallet))
 }
 
-func (h *v1walletHandler) GetWalletByID(c *fiber.Ctx) error {
+func (h *walletHandler) GetWalletByID(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	wallet, err := h.services.Wallet.GetWalletByID(c.Context(), id)
 	if err != nil {
@@ -53,7 +53,7 @@ func (h *v1walletHandler) GetWalletByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(wallet))
 }
 
-func (h *v1walletHandler) GetWallets(c *fiber.Ctx) error {
+func (h *walletHandler) GetWallets(c *fiber.Ctx) error {
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (h *v1walletHandler) GetWallets(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(wallets))
 }
 
-func (h *v1walletHandler) UpdateWallet(c *fiber.Ctx) error {
+func (h *walletHandler) UpdateWallet(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	var req service.UpdateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -79,7 +79,7 @@ func (h *v1walletHandler) UpdateWallet(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(wallet))
 }
 
-func (h *v1walletHandler) DeleteWallet(c *fiber.Ctx) error {
+func (h *walletHandler) DeleteWallet(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	err := h.services.Wallet.DeleteWallet(c.Context(), id)
 	if err != nil {
@@ -88,7 +88,7 @@ func (h *v1walletHandler) DeleteWallet(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(nil))
 }
 
-func (h *v1walletHandler) CheckWalletIntegrity(c *fiber.Ctx) error {
+func (h *walletHandler) CheckWalletIntegrity(c *fiber.Ctx) error {
 	id := c.Params("walletId")
 	accountsSum, err := h.services.Wallet.GetAccountsSum(c.Context(), id)
 	if err != nil {
@@ -99,7 +99,6 @@ func (h *v1walletHandler) CheckWalletIntegrity(c *fiber.Ctx) error {
 		return err
 	}
 	diff := math.Abs(float64(accountsSum - transactionsSum))
-
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(fiber.Map{
 		"accountsSum":     accountsSum,
 		"transactionsSum": transactionsSum,

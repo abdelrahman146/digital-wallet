@@ -10,7 +10,8 @@ import (
 func CreateAppContext(actor string) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		requestId := ctx.Locals("requestid").(string)
-		l, err := logger.NewZapLogger(zapcore.DebugLevel, logger.Field("requestId", requestId), logger.Field("actor", actor))
+		actorId := ctx.Locals("actorId").(string)
+		l, err := logger.NewZapLogger(zapcore.DebugLevel, logger.Field("requestId", requestId), logger.Field("actor", actor), logger.Field("actorId", actorId))
 		if err != nil {
 			return err
 		}
@@ -28,8 +29,8 @@ func GetRequestID(ctx context.Context) *string {
 	return ctx.Value("requestId").(*string)
 }
 
-func GetUserID(ctx context.Context) *string {
-	return ctx.Value("userId").(*string)
+func GetActorID(ctx context.Context) *string {
+	return ctx.Value("actorId").(*string)
 }
 
 func GetActor(ctx context.Context) *string {

@@ -47,7 +47,7 @@ func (s *accountService) CreateAccount(ctx context.Context, walletId, userId str
 	account := &model.Account{
 		UserID: userId,
 	}
-	account.SetActor(*api.GetActor(ctx), api.GetUserID(ctx))
+	account.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
 	account.SetRemarks(fmt.Sprintf("Account created for user %s", userId))
 	err = s.repos.Account.CreateAccount(ctx, account)
 	if err != nil {

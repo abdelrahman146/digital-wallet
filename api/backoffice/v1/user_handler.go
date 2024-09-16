@@ -1,4 +1,4 @@
-package handler
+package backofficev1
 
 import (
 	"digital-wallet/internal/service"
@@ -6,25 +6,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type v1UserHandler struct {
+type userHandler struct {
 	services *service.Services
 }
 
-func NewV1UserHandler(appGroup fiber.Router, services *service.Services) {
+func NewUserHandler(appGroup fiber.Router, services *service.Services) {
+	handler := &userHandler{services: services}
+	handler.Setup(appGroup)
+}
+
+func (h *userHandler) Setup(appGroup fiber.Router) {
 	group := appGroup.Group("/users")
-	handler := &v1UserHandler{services: services}
-	handler.Setup(group)
+	group.Post("/", h.CreateUser)
+	group.Get("/", h.GetUsers)
+	group.Get("/:userId", h.GetUserByID)
+	group.Put("/:userId/tier", h.SetUserTier)
+	group.Delete("/:userId", h.DeleteUser)
 }
 
-func (h *v1UserHandler) Setup(r fiber.Router) {
-	r.Post("/", h.CreateUser)
-	r.Get("/", h.GetUsers)
-	r.Get("/:userId", h.GetUserByID)
-	r.Put("/:userId/tier", h.SetUserTier)
-	r.Delete("/:userId", h.DeleteUser)
-}
-
-func (h *v1UserHandler) CreateUser(c *fiber.Ctx) error {
+func (h *userHandler) CreateUser(c *fiber.Ctx) error {
 	var req service.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
 		return err
@@ -36,7 +36,7 @@ func (h *v1UserHandler) CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(user))
 }
 
-func (h *v1UserHandler) GetUserByID(c *fiber.Ctx) error {
+func (h *userHandler) GetUserByID(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	user, err := h.services.User.GetUserByID(c.Context(), userId)
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *v1UserHandler) GetUserByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(user))
 }
 
-func (h *v1UserHandler) SetUserTier(c *fiber.Ctx) error {
+func (h *userHandler) SetUserTier(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	tierId := c.Params("tierId")
 	user, err := h.services.User.SetUserTier(c.Context(), userId, tierId)
@@ -55,7 +55,7 @@ func (h *v1UserHandler) SetUserTier(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(user))
 }
 
-func (h *v1UserHandler) GetUsers(c *fiber.Ctx) error {
+func (h *userHandler) GetUsers(c *fiber.Ctx) error {
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (h *v1UserHandler) GetUsers(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(users))
 }
 
-func (h *v1UserHandler) DeleteUser(c *fiber.Ctx) error {
+func (h *userHandler) DeleteUser(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	err := h.services.User.DeleteUser(c.Context(), userId)
 	if err != nil {

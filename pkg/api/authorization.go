@@ -7,7 +7,7 @@ import (
 
 func IsAuthorizedUser(ctx context.Context, recordOwner string) error {
 	actor := GetActor(ctx)
-	actorId := GetUserID(ctx)
+	actorId := GetActorID(ctx)
 	if actor != nil && actorId != nil && (*actor == AppActorAdmin || *actor == AppActorSystem || *actorId == recordOwner) {
 		return nil
 	}
