@@ -50,18 +50,19 @@ func (s *userService) CreateUser(ctx context.Context, req *CreateUserRequest) (*
 
 func (s *userService) GetUserByID(ctx context.Context, userId string) (*model.User, error) {
 	user, err := s.repos.User.FetchUserByID(ctx, userId)
-	if err != nil {
-		return nil, err
+	if user == nil {
+		api.GetLogger(ctx).Error("User not found", logger.Field("userId", userId), logger.Field("error", err))
+		return nil, errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
 	}
 	return user, nil
 }
 
 func (s *userService) SetUserTier(ctx context.Context, userId string, tierId string) (*model.User, error) {
 	user, err := s.repos.User.FetchUserByID(ctx, userId)
-	if err != nil {
-		return nil, err
+	if user == nil {
+		api.GetLogger(ctx).Error("User not found", logger.Field("userId", userId), logger.Field("error", err))
+		return nil, errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
 	}
-	user.TierID = tierId
 	if err := s.repos.User.UpdateUserTier(ctx, userId, tierId); err != nil {
 		return nil, err
 	}

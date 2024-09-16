@@ -57,7 +57,7 @@ func (h *v1AccountHandler) GetAccountsSum(c *fiber.Ctx) error {
 func (h *v1AccountHandler) GetAccountByID(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	id := c.Params("accountId")
-	account, err := h.services.Account.GetAccountByID(c.Context(), walletId, id)
+	account, err := h.services.Account.GetAccount(c.Context(), walletId, id)
 	if err != nil {
 		return err
 	}
@@ -97,11 +97,11 @@ func (h *v1AccountHandler) GetAccountTransactionsByID(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	_, err = h.services.Account.GetAccountByID(c.Context(), walletId, id)
+	_, err = h.services.Account.GetAccount(c.Context(), walletId, id)
 	if err != nil {
 		return err
 	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(c.Context(), walletId, id, page, limit)
+	transactions, err := h.services.Transaction.GetAccountTransactions(c.Context(), walletId, id, page, limit)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (h *v1AccountHandler) GetAccountTransactionsByAccountID(c *fiber.Ctx) error
 	if err != nil {
 		return err
 	}
-	transactions, err := h.services.Transaction.GetTransactionsByAccountID(c.Context(), walletId, accountId, page, limit)
+	transactions, err := h.services.Transaction.GetAccountTransactions(c.Context(), walletId, accountId, page, limit)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (h *v1AccountHandler) CreateTransaction(c *fiber.Ctx) error {
 func (h *v1AccountHandler) GetAccountTransactionsSum(c *fiber.Ctx) error {
 	accountId := c.Params("accountId")
 	walletId := c.Params("walletId")
-	sum, err := h.services.Transaction.GetTransactionsSumByAccountID(c.Context(), walletId, accountId)
+	sum, err := h.services.Transaction.GetAccountTransactionSum(c.Context(), walletId, accountId)
 	if err != nil {
 		return err
 	}

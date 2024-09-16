@@ -10,11 +10,22 @@ const (
 	TransactionTypeCredit = "CREDIT"
 )
 
+const (
+	TransactionReasonDeposit    = "DEPOSIT"
+	TransactionReasonWithdrawal = "WITHDRAWAL"
+	TransactionReasonExchange   = "EXCHANGE"
+	TransactionReasonPurchase   = "PURCHASE"
+	TransactionReasonRedeem     = "REDEEM"
+	TransactionReasonPenalty    = "PENALTY"
+	TransactionReasonExpired    = "EXPIRED"
+)
+
 type Transaction struct {
 	ID              string      `gorm:"column:id;primaryKey" json:"id"`
 	Type            string      `gorm:"column:type" json:"type"`
 	WalletID        string      `gorm:"column:wallet_id" json:"walletId"`
 	AccountID       string      `gorm:"column:account_id" json:"accountId"`
+	Reason          string      `gorm:"column:reason" json:"reason"`
 	Metadata        types.JSONB `gorm:"column:metadata;type:jsonb" json:"metadata"`
 	ProgramID       *string     `gorm:"column:program_id" json:"programId"`
 	Amount          uint64      `gorm:"column:amount" json:"amount"`

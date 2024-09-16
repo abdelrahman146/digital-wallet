@@ -11,10 +11,15 @@ import (
 )
 
 type AccountService interface {
+	// CreateAccount creates a new account for a user
 	CreateAccount(ctx context.Context, walletId, userId string) (*model.Account, error)
-	GetAccountByID(ctx context.Context, accountId string) (*model.Account, error)
+	// GetAccount fetches an account by ID
+	GetAccount(ctx context.Context, accountId string) (*model.Account, error)
+	// GetWalletAccounts fetches all accounts for a wallet
 	GetWalletAccounts(ctx context.Context, walletId string, page int, limit int) (*api.List[model.Account], error)
+	// GetWalletAccountsSum fetches the sum of all accounts for a wallet
 	GetWalletAccountsSum(ctx context.Context, walletId string) (uint64, error)
+	// DeleteAccount deletes an account by ID
 	DeleteAccount(ctx context.Context, accountId string) error
 }
 
@@ -51,8 +56,8 @@ func (s *accountService) CreateAccount(ctx context.Context, walletId, userId str
 	return account, nil
 }
 
-func (s *accountService) GetAccountByID(ctx context.Context, accountId string) (*model.Account, error) {
-	account, err := s.repos.Account.GetAccountByID(ctx, accountId)
+func (s *accountService) GetAccount(ctx context.Context, accountId string) (*model.Account, error) {
+	account, err := s.repos.Account.FetchAccountByID(ctx, accountId)
 	if account == nil {
 		return nil, errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}

@@ -25,6 +25,10 @@ func NewTierService(repos *repository.Repos) TierService {
 }
 
 func (s *tierService) CreateTier(ctx context.Context, req *CreateTierRequest) (*model.Tier, error) {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		return nil, errs.NewValidationError("Invalid tier request", "", fields)

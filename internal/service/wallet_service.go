@@ -7,17 +7,25 @@ import (
 	"digital-wallet/pkg/api"
 	"digital-wallet/pkg/errs"
 	"digital-wallet/pkg/logger"
+	"digital-wallet/pkg/types"
 	"digital-wallet/pkg/validator"
 	"time"
 )
 
 type WalletService interface {
+	// CreateWallet creates a new wallet
 	CreateWallet(ctx context.Context, req *CreateWalletRequest) (*model.Wallet, error)
+	// GetAccountsSum fetches the sum of all accounts for a wallet
 	GetAccountsSum(ctx context.Context, walletId string) (uint64, error)
+	// GetTransactionsSum fetches the sum of all transactions for a wallet
 	GetTransactionsSum(ctx context.Context, walletId string) (uint64, error)
+	// UpdateWallet updates a wallet
 	UpdateWallet(ctx context.Context, walletId string, req *UpdateWalletRequest) (*model.Wallet, error)
+	// GetWalletByID fetches a wallet by ID
 	GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
+	// GetWallets fetches all wallets
 	GetWallets(ctx context.Context, page int, limit int) (*api.List[model.Wallet], error)
+	// DeleteWallet deletes a wallet by ID
 	DeleteWallet(ctx context.Context, walletId string) error
 }
 
@@ -30,6 +38,10 @@ func NewWalletService(repos *repository.Repos) WalletService {
 }
 
 func (s *walletService) CreateWallet(ctx context.Context, req *CreateWalletRequest) (*model.Wallet, error) {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		api.GetLogger(ctx).Error("Invalid request", logger.Field("fields", fields), logger.Field("request", req))
@@ -45,7 +57,7 @@ func (s *walletService) CreateWallet(ctx context.Context, req *CreateWalletReque
 		LimitGlobal:  req.LimitGlobal,
 	}
 	if req.PointsExpireAfter != nil {
-		pointsExpireAfter := time.Duration(*req.PointsExpireAfter) * time.Millisecond
+		pointsExpireAfter := types.Interval(time.Duration(*req.PointsExpireAfter) * time.Millisecond)
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
 	if err := s.repos.Wallet.CreateWallet(ctx, wallet); err != nil {
@@ -55,6 +67,10 @@ func (s *walletService) CreateWallet(ctx context.Context, req *CreateWalletReque
 }
 
 func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *UpdateWalletRequest) (*model.Wallet, error) {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
 	if err := validator.GetValidator().ValidateStruct(req); err != nil {
 		fields := validator.GetValidator().GetValidationErrors(err)
 		api.GetLogger(ctx).Error("Invalid transaction request", logger.Field("fields", fields), logger.Field("request", req))
@@ -73,7 +89,7 @@ func (s *walletService) UpdateWallet(ctx context.Context, walletId string, req *
 		wallet.IsMonetary = *req.IsMonetary
 	}
 	if req.PointsExpireAfter != nil {
-		pointsExpireAfter := time.Duration(*req.PointsExpireAfter) * time.Millisecond
+		pointsExpireAfter := types.Interval(time.Duration(*req.PointsExpireAfter) * time.Millisecond)
 		wallet.PointsExpireAfter = &pointsExpireAfter
 	}
 	if err := s.repos.Wallet.UpdateWallet(ctx, wallet); err != nil {
@@ -103,13 +119,25 @@ func (s *walletService) GetWallets(ctx context.Context, page int, limit int) (*a
 }
 
 func (s *walletService) DeleteWallet(ctx context.Context, walletId string) error {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return err
+	}
 	return s.repos.Wallet.RemoveWallet(ctx, walletId)
 }
 
 func (s *walletService) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return 0, err
+	}
 	return s.repos.Account.SumWalletAccounts(ctx, walletId)
 }
 
 func (s *walletService) GetTransactionsSum(ctx context.Context, walletId string) (uint64, error) {
-	return s.repos.Transaction.GetTransactionsSum(ctx, walletId)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return 0, err
+	}
+	return s.repos.Transaction.SumWalletTransactions(ctx, walletId)
 }

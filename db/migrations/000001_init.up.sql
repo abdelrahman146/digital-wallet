@@ -153,14 +153,21 @@ CREATE TABLE IF NOT EXISTS transactions
     type             TEXT                                            NOT NULL,
     wallet_id        TEXT REFERENCES wallets (id) ON DELETE CASCADE  NOT NULL,
     account_id       TEXT REFERENCES accounts (id) ON DELETE CASCADE NOT NULL,
+    reason           TEXT                                            NOT NULL,
     metadata         JSONB,
     program_id       INT                                             REFERENCES programs (id) ON DELETE SET NULL,
-    amount           BIGINT                                          NOT NULL,
-    available_amount BIGINT           DEFAULT 0                      NOT NULL, -- amount after expiry or debit
+    amount           BIGINT                                          NOT NULL CHECK ( amount >= 0 ),
+    available_amount BIGINT           DEFAULT 0                      NOT NULL CHECK (available_amount BETWEEN amount AND 0), -- amount after expiry or debit
     expire_at        TIMESTAMP,
     version          BIGINT           DEFAULT 0                      NOT NULL CHECK (version >= 0),
     created_at       TIMESTAMP        DEFAULT NOW()                  NOT NULL,
-    CONSTRAINT check_transaction_type CHECK (type IN ('CREDIT', 'DEBIT'))
+    CONSTRAINT check_transaction_type CHECK (type IN ('CREDIT', 'DEBIT')),
+    CONSTRAINT check_transaction_reason CHECK (reason IN
+                                               ('REWARD', 'PURCHASE', 'REDEEM', 'PENALTY', 'EXPIRED', 'EXCHANGE',
+                                                'WITHDRAWAL', 'DEPOSIT')),
+    CONSTRAINT check_transaction_integrity CHECK (reason IN ('REWARD', 'DEPOSIT') AND type = 'CREDIT' OR
+                                                  reason IN ('PURCHASE', 'REDEEM', 'PENALTY', 'EXPIRED',
+                                                             'WITHDRAWAL') AND type = 'DEBIT')
 ) PARTITION BY HASH (id);
 
 CREATE TABLE IF NOT EXISTS transactions_part_1 PARTITION OF transactions
