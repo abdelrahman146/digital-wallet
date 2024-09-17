@@ -24,6 +24,16 @@ func (h *userHandler) Setup(appGroup fiber.Router) {
 	group.Delete("/:userId", h.DeleteUser)
 }
 
+// CreateUser creates a new user
+// @Summary Create a new user
+// @Description Create a user based on the provided request
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param user body service.CreateUserRequest true "Create User Request"
+// @Success 201 {object} api.SuccessResponse{result=model.User}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/users [post]
 func (h *userHandler) CreateUser(c *fiber.Ctx) error {
 	var req service.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -36,6 +46,14 @@ func (h *userHandler) CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(user))
 }
 
+// GetUserByID retrieves a user by its ID
+// @Summary Get a user by its ID
+// @Description Get a user by its ID
+// @Tags User
+// @Param userId path string true "User ID"
+// @Success 200 {object} api.SuccessResponse{result=model.User}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/users/{userId} [get]
 func (h *userHandler) GetUserByID(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	user, err := h.services.User.GetUserByID(c.Context(), userId)
@@ -45,6 +63,15 @@ func (h *userHandler) GetUserByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(user))
 }
 
+// SetUserTier sets the tier of a user
+// @Summary Set the tier of a user
+// @Description Set the tier of a user
+// @Tags User
+// @Param userId path string true "User ID"
+// @Param tierId path string true "Tier ID"
+// @Success 202 {object} api.SuccessResponse{result=model.User}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/users/{userId}/tier/{tierId} [put]
 func (h *userHandler) SetUserTier(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	tierId := c.Params("tierId")
@@ -55,6 +82,15 @@ func (h *userHandler) SetUserTier(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusAccepted).JSON(api.NewSuccessResponse(user))
 }
 
+// GetUsers retrieves a list of users
+// @Summary Get a list of users
+// @Description Get a list of users
+// @Tags User
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
+// @Success 200 {object} api.SuccessResponse{result=[]model.User}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/users [get]
 func (h *userHandler) GetUsers(c *fiber.Ctx) error {
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
@@ -67,6 +103,14 @@ func (h *userHandler) GetUsers(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(users))
 }
 
+// DeleteUser deletes a user
+// @Summary Delete a user
+// @Description Delete a user
+// @Tags User
+// @Param userId path string true "User ID"
+// @Success 202 {object} api.SuccessResponse
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/users/{userId} [delete]
 func (h *userHandler) DeleteUser(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 	err := h.services.User.DeleteUser(c.Context(), userId)

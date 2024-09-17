@@ -28,6 +28,120 @@ definitions:
       success:
         type: boolean
     type: object
+  model.Account:
+    properties:
+      balance:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      updatedAt:
+        type: string
+      userId:
+        type: string
+      version:
+        type: integer
+      walletId:
+        type: string
+    type: object
+  model.Audit:
+    properties:
+      actor:
+        type: string
+      actorId:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      newRecord:
+        allOf:
+        - $ref: '#/definitions/types.JSONB'
+        description: '@swaggertype object'
+      oldRecord:
+        allOf:
+        - $ref: '#/definitions/types.JSONB'
+        description: '@swaggertype object'
+      operation:
+        type: string
+      recordId:
+        type: string
+      remarks:
+        type: string
+      table:
+        type: string
+    type: object
+  model.ExchangeRate:
+    properties:
+      createdAt:
+        type: string
+      exchangeRate:
+        description: '@swaggertype number'
+        type: number
+      fromWalletId:
+        type: string
+      id:
+        type: integer
+      minimumAmount:
+        type: integer
+      tierId:
+        type: string
+      toWalletId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.Transaction:
+    properties:
+      accountId:
+        type: string
+      amount:
+        type: integer
+      availableAmount:
+        type: integer
+      createdAt:
+        type: string
+      expireAt:
+        type: string
+      id:
+        type: string
+      metadata:
+        $ref: '#/definitions/types.JSONB'
+      newBalance:
+        type: integer
+      previousBalance:
+        type: integer
+      programId:
+        type: string
+      reason:
+        type: string
+      type:
+        type: string
+      version:
+        type: integer
+      walletId:
+        type: string
+    type: object
+  model.User:
+    properties:
+      accounts:
+        items:
+          $ref: '#/definitions/model.Account'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: string
+      isActive;default:true:
+        type: boolean
+      tierId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   model.Wallet:
     properties:
       createdAt:
@@ -59,6 +173,32 @@ definitions:
       updatedAt:
         type: string
     type: object
+  service.CreateExchangeRateRequest:
+    properties:
+      exchangeRate:
+        type: number
+      fromWalletId:
+        type: string
+      tierId:
+        type: string
+      toWalletId:
+        type: string
+    required:
+    - exchangeRate
+    - fromWalletId
+    - toWalletId
+    type: object
+  service.CreateUserRequest:
+    properties:
+      id:
+        maxLength: 20
+        minLength: 1
+        type: string
+      tierId:
+        type: string
+    required:
+    - id
+    type: object
   service.CreateWalletRequest:
     properties:
       currency:
@@ -86,6 +226,13 @@ definitions:
     - currency
     - id
     - name
+    type: object
+  service.ExchangeResponse:
+    properties:
+      fromTransaction:
+        $ref: '#/definitions/model.Transaction'
+      toTransaction:
+        $ref: '#/definitions/model.Transaction'
     type: object
   service.UpdateWalletRequest:
     properties:
@@ -130,6 +277,9 @@ definitions:
     - Second
     - Minute
     - Hour
+  types.JSONB:
+    additionalProperties: true
+    type: object
 host: localhost:3401
 info:
   contact:
@@ -140,6 +290,417 @@ info:
   title: Digital Wallet API
   version: "1.0"
 paths:
+  /backoffice/audit/actor/{actor}/{actorId}:
+    get:
+      description: Get all audit logs of an actor
+      parameters:
+      - description: Actor
+        in: path
+        name: actor
+        required: true
+        type: string
+      - description: Actor ID
+        in: path
+        name: actorId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Audit'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all audit logs of an actor
+      tags:
+      - Audit
+  /backoffice/audit/record/{table}/{recordId}:
+    get:
+      description: Get all audit logs of a record
+      parameters:
+      - description: Table
+        in: path
+        name: table
+        required: true
+        type: string
+      - description: Record ID
+        in: path
+        name: recordId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Audit'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all audit logs of a record
+      tags:
+      - Audit
+  /backoffice/audit/table/{table}:
+    get:
+      description: Get all audit logs of a table
+      parameters:
+      - description: Table
+        in: path
+        name: table
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Audit'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all audit logs of a table
+      tags:
+      - Audit
+  /backoffice/exchange-rates:
+    get:
+      description: Get all exchange rates
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.ExchangeRate'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all exchange rates
+      tags:
+      - Exchange Rate
+    post:
+      consumes:
+      - application/json
+      description: Create an exchange rate based on the provided request
+      parameters:
+      - description: Create Exchange Rate Request
+        in: body
+        name: exchangeRate
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateExchangeRateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.ExchangeRate'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new exchange rate
+      tags:
+      - Exchange Rate
+  /backoffice/exchange-rates/{exchangeRateId}:
+    delete:
+      description: Delete an exchange rate by its ID
+      parameters:
+      - description: Exchange Rate ID
+        in: path
+        name: exchangeRateId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete an exchange rate
+      tags:
+      - Exchange Rate
+    put:
+      consumes:
+      - application/json
+      description: Update an exchange rate based on the provided request
+      parameters:
+      - description: Exchange Rate ID
+        in: path
+        name: exchangeRateId
+        required: true
+        type: string
+      - description: Update Exchange Rate Request
+        in: body
+        name: exchangeRate
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.ExchangeRate'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update an exchange rate
+      tags:
+      - Exchange Rate
+  /backoffice/exchange-rates/wallets/{walletId}:
+    get:
+      description: Get all exchange rates of a wallet
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.ExchangeRate'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all exchange rates of a wallet
+      tags:
+      - Exchange Rate
+  /backoffice/users:
+    get:
+      description: Get a list of users
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.User'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a list of users
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Create a user based on the provided request
+      parameters:
+      - description: Create User Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - User
+  /backoffice/users/{userId}:
+    delete:
+      description: Delete a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a user
+      tags:
+      - User
+    get:
+      description: Get a user by its ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a user by its ID
+      tags:
+      - User
+  /backoffice/users/{userId}/tier/{tierId}:
+    put:
+      description: Set the tier of a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Tier ID
+        in: path
+        name: tierId
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Set the tier of a user
+      tags:
+      - User
   /backoffice/wallets:
     get:
       description: Get a list of wallets
@@ -288,6 +849,231 @@ paths:
       summary: Update a wallet
       tags:
       - Wallet
+  /backoffice/wallets/{walletId}/accounts:
+    get:
+      description: Get all accounts of a wallet
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Account'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all accounts of a wallet
+      tags:
+      - Account
+    post:
+      consumes:
+      - application/json
+      description: Create an account based on the provided request
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Create Account Request
+        in: body
+        name: account
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Account'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create an account
+      tags:
+      - Account
+  /backoffice/wallets/{walletId}/accounts/{accountId}:
+    delete:
+      description: Delete an account
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete an account
+      tags:
+      - Account
+    get:
+      description: Get an account by its ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Account'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get an account by its ID
+      tags:
+      - Account
+  /backoffice/wallets/{walletId}/accounts/{accountId}/transactions:
+    get:
+      description: Get all transactions of an account
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Transaction'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all transactions of an account
+      tags:
+      - Account
+  /backoffice/wallets/{walletId}/accounts/{accountId}/transactions/sum:
+    get:
+      description: Get the sum of all transactions of an account
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  type: number
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get the sum of all transactions of an account
+      tags:
+      - Account
+  /backoffice/wallets/{walletId}/accounts/sum:
+    get:
+      description: Get the sum of all accounts of a wallet
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  type: number
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get the sum of all accounts of a wallet
+      tags:
+      - Account
   /backoffice/wallets/{walletId}/check-integrity:
     get:
       description: Check the integrity of a wallet by comparing the sum of accounts
@@ -318,4 +1104,128 @@ paths:
       summary: Check the integrity of a wallet
       tags:
       - Wallet
+  /backoffice/wallets/{walletId}/transactions:
+    get:
+      description: Get all transactions of a wallet
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Transaction'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get all transactions of a wallet
+      tags:
+      - Transaction
+    post:
+      consumes:
+      - application/json
+      description: Create a transaction based on the provided request
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Create Transaction Request
+        in: body
+        name: req
+        required: true
+        schema:
+          type: object
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Transaction'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a transaction
+      tags:
+      - Transaction
+  /backoffice/wallets/{walletId}/transactions/exchange:
+    post:
+      consumes:
+      - application/json
+      description: Create an exchange transaction based on the provided request
+      parameters:
+      - description: Create Exchange Transaction Request
+        in: body
+        name: req
+        required: true
+        schema:
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/service.ExchangeResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create an exchange transaction
+      tags:
+      - Transaction
+  /backoffice/wallets/{walletId}/transactions/sum:
+    get:
+      description: Get the sum of all transactions of a wallet
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  type: integer
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get the sum of all transactions of a wallet
+      tags:
+      - Transaction
 swagger: "2.0"

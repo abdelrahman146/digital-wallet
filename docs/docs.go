@@ -19,6 +19,677 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/backoffice/audit/actor/{actor}/{actorId}": {
+            "get": {
+                "description": "Get all audit logs of an actor",
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Get all audit logs of an actor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Actor",
+                        "name": "actor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Actor ID",
+                        "name": "actorId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Audit"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/audit/record/{table}/{recordId}": {
+            "get": {
+                "description": "Get all audit logs of a record",
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Get all audit logs of a record",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Table",
+                        "name": "table",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Record ID",
+                        "name": "recordId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Audit"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/audit/table/{table}": {
+            "get": {
+                "description": "Get all audit logs of a table",
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Get all audit logs of a table",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Table",
+                        "name": "table",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Audit"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/exchange-rates": {
+            "get": {
+                "description": "Get all exchange rates",
+                "tags": [
+                    "Exchange Rate"
+                ],
+                "summary": "Get all exchange rates",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.ExchangeRate"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an exchange rate based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Exchange Rate"
+                ],
+                "summary": "Create a new exchange rate",
+                "parameters": [
+                    {
+                        "description": "Create Exchange Rate Request",
+                        "name": "exchangeRate",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateExchangeRateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.ExchangeRate"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/exchange-rates/wallets/{walletId}": {
+            "get": {
+                "description": "Get all exchange rates of a wallet",
+                "tags": [
+                    "Exchange Rate"
+                ],
+                "summary": "Get all exchange rates of a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.ExchangeRate"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/exchange-rates/{exchangeRateId}": {
+            "put": {
+                "description": "Update an exchange rate based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Exchange Rate"
+                ],
+                "summary": "Update an exchange rate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exchange Rate ID",
+                        "name": "exchangeRateId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Exchange Rate Request",
+                        "name": "exchangeRate",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.ExchangeRate"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an exchange rate by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Exchange Rate"
+                ],
+                "summary": "Delete an exchange rate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exchange Rate ID",
+                        "name": "exchangeRateId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/api.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/users": {
+            "get": {
+                "description": "Get a list of users",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get a list of users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.User"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a user based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Create a new user",
+                "parameters": [
+                    {
+                        "description": "Create User Request",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/users/{userId}": {
+            "get": {
+                "description": "Get a user by its ID",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get a user by its ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a user",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/api.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/users/{userId}/tier/{tierId}": {
+            "put": {
+                "description": "Set the tier of a user",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Set the tier of a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tier ID",
+                        "name": "tierId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/backoffice/wallets": {
             "get": {
                 "description": "Get a list of wallets",
@@ -261,6 +932,371 @@ const docTemplate = `{
                 }
             }
         },
+        "/backoffice/wallets/{walletId}/accounts": {
+            "get": {
+                "description": "Get all accounts of a wallet",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get all accounts of a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Account"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an account based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Create an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Account Request",
+                        "name": "account",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Account"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/accounts/sum": {
+            "get": {
+                "description": "Get the sum of all accounts of a wallet",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get the sum of all accounts of a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/accounts/{accountId}": {
+            "get": {
+                "description": "Get an account by its ID",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get an account by its ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Account"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an account",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Delete an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/api.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/accounts/{accountId}/transactions": {
+            "get": {
+                "description": "Get all transactions of an account",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get all transactions of an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Transaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/accounts/{accountId}/transactions/sum": {
+            "get": {
+                "description": "Get the sum of all transactions of an account",
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get the sum of all transactions of an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account ID",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/backoffice/wallets/{walletId}/check-integrity": {
             "get": {
                 "description": "Check the integrity of a wallet by comparing the sum of accounts and transactions",
@@ -294,6 +1330,212 @@ const docTemplate = `{
                                         "result": {
                                             "type": "object",
                                             "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/transactions": {
+            "get": {
+                "description": "Get all transactions of a wallet",
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get all transactions of a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Transaction"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a transaction based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Create a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Transaction Request",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Transaction"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/transactions/exchange": {
+            "post": {
+                "description": "Create an exchange transaction based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Create an exchange transaction",
+                "parameters": [
+                    {
+                        "description": "Create Exchange Transaction Request",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/service.ExchangeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/wallets/{walletId}/transactions/sum": {
+            "get": {
+                "description": "Get the sum of all transactions of a wallet",
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get the sum of all transactions of a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "walletId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "type": "integer"
                                         }
                                     }
                                 }
@@ -354,6 +1596,183 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Account": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "walletId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Audit": {
+            "type": "object",
+            "properties": {
+                "actor": {
+                    "type": "string"
+                },
+                "actorId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "newRecord": {
+                    "description": "@swaggertype object",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.JSONB"
+                        }
+                    ]
+                },
+                "oldRecord": {
+                    "description": "@swaggertype object",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.JSONB"
+                        }
+                    ]
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "recordId": {
+                    "type": "string"
+                },
+                "remarks": {
+                    "type": "string"
+                },
+                "table": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExchangeRate": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "exchangeRate": {
+                    "description": "@swaggertype number",
+                    "type": "number"
+                },
+                "fromWalletId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "minimumAmount": {
+                    "type": "integer"
+                },
+                "tierId": {
+                    "type": "string"
+                },
+                "toWalletId": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Transaction": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "availableAmount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "expireAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "newBalance": {
+                    "type": "integer"
+                },
+                "previousBalance": {
+                    "type": "integer"
+                },
+                "programId": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "walletId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Account"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive;default:true": {
+                    "type": "boolean"
+                },
+                "tierId": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Wallet": {
             "type": "object",
             "properties": {
@@ -403,6 +1822,44 @@ const docTemplate = `{
                 }
             }
         },
+        "service.CreateExchangeRateRequest": {
+            "type": "object",
+            "required": [
+                "exchangeRate",
+                "fromWalletId",
+                "toWalletId"
+            ],
+            "properties": {
+                "exchangeRate": {
+                    "type": "number"
+                },
+                "fromWalletId": {
+                    "type": "string"
+                },
+                "tierId": {
+                    "type": "string"
+                },
+                "toWalletId": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
+                },
+                "tierId": {
+                    "type": "string"
+                }
+            }
+        },
         "service.CreateWalletRequest": {
             "type": "object",
             "required": [
@@ -439,6 +1896,17 @@ const docTemplate = `{
                 },
                 "pointsExpireAfter": {
                     "type": "integer"
+                }
+            }
+        },
+        "service.ExchangeResponse": {
+            "type": "object",
+            "properties": {
+                "fromTransaction": {
+                    "$ref": "#/definitions/model.Transaction"
+                },
+                "toTransaction": {
+                    "$ref": "#/definitions/model.Transaction"
                 }
             }
         },
@@ -497,6 +1965,10 @@ const docTemplate = `{
                 "Minute",
                 "Hour"
             ]
+        },
+        "types.JSONB": {
+            "type": "object",
+            "additionalProperties": true
         }
     }
 }`

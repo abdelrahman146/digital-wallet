@@ -28,6 +28,16 @@ func (h *transactionHandler) Setup(appGroup fiber.Router) {
 	group.Get("/sum", h.GetTransactionsSum)
 }
 
+// GetTransactions retrieves all transactions of a wallet
+// @Summary Get all transactions of a wallet
+// @Description Get all transactions of a wallet
+// @Tags Transaction
+// @Param walletId path string true "Wallet ID"
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
+// @Success 200 {object} api.SuccessResponse{result=[]model.Transaction}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/wallets/{walletId}/transactions [get]
 func (h *transactionHandler) GetTransactions(c *fiber.Ctx) error {
 	page, limit, err := api.GetPageAndLimit(c)
 	if err != nil {
@@ -41,6 +51,14 @@ func (h *transactionHandler) GetTransactions(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(transactions))
 }
 
+// GetTransactionsSum retrieves the sum of all transactions of a wallet
+// @Summary Get the sum of all transactions of a wallet
+// @Description Get the sum of all transactions of a wallet
+// @Tags Transaction
+// @Param walletId path string true "Wallet ID"
+// @Success 200 {object} api.SuccessResponse{result=uint64}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/wallets/{walletId}/transactions/sum [get]
 func (h *transactionHandler) GetTransactionsSum(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	sum, err := h.services.Transaction.GetWalletTransactionSum(c.Context(), walletId)
@@ -50,6 +68,16 @@ func (h *transactionHandler) GetTransactionsSum(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(sum))
 }
 
+// CreateTransaction creates a transaction
+// @Summary Create a transaction
+// @Description Create a transaction based on the provided request
+// @Tags Transaction
+// @Accept json
+// @Param walletId path string true "Wallet ID"
+// @Param req body object true "Create Transaction Request"
+// @Success 201 {object} api.SuccessResponse{result=model.Transaction}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/wallets/{walletId}/transactions [post]
 func (h *transactionHandler) CreateTransaction(c *fiber.Ctx) error {
 	walletId := c.Params("walletId")
 	var req struct {
@@ -67,6 +95,15 @@ func (h *transactionHandler) CreateTransaction(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(api.NewSuccessResponse(transaction))
 }
 
+// CreateExchangeTransaction creates an exchange transaction
+// @Summary Create an exchange transaction
+// @Description Create an exchange transaction based on the provided request
+// @Tags Transaction
+// @Accept json
+// @Param req body object true "Create Exchange Transaction Request"
+// @Success 200 {object} api.SuccessResponse{result=service.ExchangeResponse}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/wallets/{walletId}/transactions/exchange [post]
 func (h *transactionHandler) CreateExchangeTransaction(c *fiber.Ctx) error {
 	var req struct {
 		FromWalletID string `json:"fromWalletId,omitempty" validate:"required"`

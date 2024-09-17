@@ -22,6 +22,16 @@ func (h *auditHandler) Setup(appGroup fiber.Router) {
 	group.Get("/actor/:actor/:actorId", h.GetActorAuditLogs)
 }
 
+// GetTableAuditLogs retrieves all audit logs of a table
+// @Summary Get all audit logs of a table
+// @Description Get all audit logs of a table
+// @Tags Audit
+// @Param table path string true "Table"
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
+// @Success 200 {object} api.SuccessResponse{result=[]model.Audit}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/audit/table/{table} [get]
 func (h *auditHandler) GetTableAuditLogs(c *fiber.Ctx) error {
 	table := c.Params("table")
 	page, limit, err := api.GetPageAndLimit(c)
@@ -35,6 +45,17 @@ func (h *auditHandler) GetTableAuditLogs(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(audits))
 }
 
+// GetRecordAuditLogs retrieves all audit logs of a record
+// @Summary Get all audit logs of a record
+// @Description Get all audit logs of a record
+// @Tags Audit
+// @Param table path string true "Table"
+// @Param recordId path string true "Record ID"
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
+// @Success 200 {object} api.SuccessResponse{result=[]model.Audit}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/audit/record/{table}/{recordId} [get]
 func (h *auditHandler) GetRecordAuditLogs(c *fiber.Ctx) error {
 	table := c.Params("table")
 	recordId := c.Params("recordId")
@@ -49,6 +70,17 @@ func (h *auditHandler) GetRecordAuditLogs(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(api.NewSuccessResponse(audits))
 }
 
+// GetActorAuditLogs retrieves all audit logs of an actor
+// @Summary Get all audit logs of an actor
+// @Description Get all audit logs of an actor
+// @Tags Audit
+// @Param actor path string true "Actor"
+// @Param actorId path string true "Actor ID"
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
+// @Success 200 {object} api.SuccessResponse{result=[]model.Audit}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /backoffice/audit/actor/{actor}/{actorId} [get]
 func (h *auditHandler) GetActorAuditLogs(c *fiber.Ctx) error {
 	actor := c.Params("actor")
 	actorId := c.Params("actorId")
