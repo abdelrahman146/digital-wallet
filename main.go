@@ -2,6 +2,7 @@ package main
 
 import (
 	backofficev1 "digital-wallet/api/backoffice/v1"
+	_ "digital-wallet/docs"
 	"digital-wallet/internal/repository"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
@@ -17,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/swaggo/fiber-swagger"
 	"os"
 	"os/signal"
 	"syscall"
@@ -57,6 +59,7 @@ func main() {
 	app.Use(requestid.New())
 
 	app.Get("/metrics", monitor.New())
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 	app.Use(fiberLogger.New(fiberLogger.Config{
 		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
 	}))
