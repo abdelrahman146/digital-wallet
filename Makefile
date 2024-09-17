@@ -1,11 +1,11 @@
-.PONY: dev build run migrate-up migrate-down create-migration
+.PONY: dev build run migrate-up migrate-down create-migration swag
 
 include .env
 export $(shell sed 's/=.*//' .env)
 
 dev:
 	@echo "start digital wallet engine..."
-	@go run cmd/main.go
+	@go run main.go
 
 build:
 	@echo "building digital wallet engine..."
@@ -31,3 +31,8 @@ migrate-down:
 seed:
 	@echo "seeding data..."
 	@go run db/seed.go
+
+swag:
+	@echo "generating swagger docs..."
+	@swag init -p "camelcase" -o ./docs --pdl 3 --parseDependency --parseInternal
+	@echo "swagger docs generated"

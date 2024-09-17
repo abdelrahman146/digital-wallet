@@ -1,0 +1,155 @@
+basePath: /api/v1/backoffice
+definitions:
+  api.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/api.ErrorResponseBody'
+      success:
+        type: boolean
+    type: object
+  api.ErrorResponseBody:
+    properties:
+      code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      httpCode:
+        type: integer
+      message:
+        type: string
+      reason:
+        type: string
+    type: object
+  api.SuccessResponse:
+    properties:
+      result: {}
+      success:
+        type: boolean
+    type: object
+  model.Wallet:
+    properties:
+      createdAt:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      isArchived:
+        type: boolean
+      isMonetary:
+        type: boolean
+      limitGlobal:
+        type: integer
+      limitPerUser:
+        type: integer
+      minimumWithdrawal:
+        type: integer
+      name:
+        type: string
+      pointsExpireAfter:
+        allOf:
+        - $ref: '#/definitions/types.Interval'
+        description: '@swaggertype string'
+      updatedAt:
+        type: string
+    type: object
+  service.CreateWalletRequest:
+    properties:
+      currency:
+        maxLength: 4
+        minLength: 1
+        type: string
+      description:
+        maxLength: 255
+        type: string
+      id:
+        type: string
+      isMonetary:
+        type: boolean
+      limitGlobal:
+        type: integer
+      limitPerUser:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      pointsExpireAfter:
+        type: integer
+    required:
+    - currency
+    - id
+    - name
+    type: object
+  types.Interval:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+host: petstore.swagger.io
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /wallets:
+    post:
+      consumes:
+      - application/json
+      description: Create a wallet based on the provided request
+      parameters:
+      - description: Create Wallet Request
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Wallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new wallet
+      tags:
+      - Wallet
+swagger: "2.0"

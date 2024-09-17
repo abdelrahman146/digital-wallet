@@ -31,6 +31,16 @@ func (h *walletHandler) Setup(appGroup fiber.Router) {
 
 }
 
+// CreateWallet creates a new wallet
+// @Summary Create a new wallet
+// @Description Create a wallet based on the provided request
+// @Tags Wallet
+// @Accept json
+// @Produce json
+// @Param wallet body service.CreateWalletRequest true "Create Wallet Request"
+// @Success 201 {object} api.SuccessResponse{result=model.Wallet}
+// @Failure 400 {object} api.ErrorResponse
+// @Router /wallets [post]
 func (h *walletHandler) CreateWallet(c *fiber.Ctx) error {
 	var req service.CreateWalletRequest
 	if err := c.BodyParser(&req); err != nil {
