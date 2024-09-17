@@ -34,5 +34,5 @@ seed:
 
 swag:
 	@echo "generating swagger docs..."
-	@swag init -p "camelcase" -o ./docs --pdl 3 --parseDependency --parseInternal
+	@swag init --pdl 3 --parseDependency --parseInternal
 	@echo "swagger docs generated"

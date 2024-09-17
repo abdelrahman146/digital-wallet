@@ -1,4 +1,4 @@
-basePath: /api/v1/backoffice
+basePath: /api/v1
 definitions:
   api.ErrorResponse:
     properties:
@@ -87,6 +87,29 @@ definitions:
     - id
     - name
     type: object
+  service.UpdateWalletRequest:
+    properties:
+      currency:
+        type: string
+      description:
+        maxLength: 255
+        type: string
+      isMonetary:
+        type: boolean
+      limitGlobal:
+        type: integer
+      limitPerUser:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      pointsExpireAfter:
+        type: integer
+    required:
+    - currency
+    - name
+    type: object
   types.Interval:
     enum:
     - -9223372036854775808
@@ -107,21 +130,49 @@ definitions:
     - Second
     - Minute
     - Hour
-host: petstore.swagger.io
+host: localhost:3401
 info:
   contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    name: Abdel Rahman Hussein
+    url: https://github.com/abdelrahman146
+  description: This is the Digital Wallet API documentation
   termsOfService: http://swagger.io/terms/
-  title: Swagger Example API
+  title: Digital Wallet API
   version: "1.0"
 paths:
-  /wallets:
+  /backoffice/wallets:
+    get:
+      description: Get a list of wallets
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  items:
+                    $ref: '#/definitions/model.Wallet'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a list of wallets
+      tags:
+      - Wallet
     post:
       consumes:
       - application/json
@@ -150,6 +201,121 @@ paths:
           schema:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Create a new wallet
+      tags:
+      - Wallet
+  /backoffice/wallets/{walletId}:
+    delete:
+      description: Delete a wallet by its ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a wallet
+      tags:
+      - Wallet
+    get:
+      description: Get a wallet by its ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Wallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a wallet by its ID
+      tags:
+      - Wallet
+    put:
+      consumes:
+      - application/json
+      description: Update a wallet based on the provided request
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Update Wallet Request
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Wallet'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a wallet
+      tags:
+      - Wallet
+  /backoffice/wallets/{walletId}/check-integrity:
+    get:
+      description: Check the integrity of a wallet by comparing the sum of accounts
+        and transactions
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: walletId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Check the integrity of a wallet
       tags:
       - Wallet
 swagger: "2.0"
