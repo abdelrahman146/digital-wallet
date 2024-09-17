@@ -1,6 +1,6 @@
 package api
 
-import "digital-wallet/pkg/errs"
+import "github.com/abdelrahman146/digital-wallet/pkg/errs"
 
 func NewErrorResponse(err error) (httpCode int, resp ErrorResponse) {
 	customErr := errs.HandleError(err)

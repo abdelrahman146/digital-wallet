@@ -1,6 +1,6 @@
 package errs
 
-import "digital-wallet/pkg/utils"
+import "github.com/abdelrahman146/digital-wallet/pkg/utils"
 
 func NewValidationError(text string, code string, fields map[string]string) CustomError {
 	return CustomError{

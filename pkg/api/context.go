@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"digital-wallet/pkg/logger"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap/zapcore"
 )

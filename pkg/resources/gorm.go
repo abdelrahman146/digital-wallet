@@ -1,8 +1,8 @@
 package resources
 
 import (
-	"digital-wallet/pkg/config"
-	"digital-wallet/pkg/logger"
+	"github.com/abdelrahman146/digital-wallet/pkg/config"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"

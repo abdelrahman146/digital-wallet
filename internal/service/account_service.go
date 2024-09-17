@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"digital-wallet/internal/model"
-	"digital-wallet/internal/repository"
-	"digital-wallet/pkg/api"
-	"digital-wallet/pkg/errs"
-	"digital-wallet/pkg/logger"
 	"fmt"
+	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/repository"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/pkg/errs"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
 )
 
 type AccountService interface {

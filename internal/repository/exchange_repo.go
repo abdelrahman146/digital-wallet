@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"digital-wallet/internal/model"
-	"digital-wallet/pkg/api"
-	"digital-wallet/pkg/logger"
+	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
 	"gorm.io/gorm"
 )
 

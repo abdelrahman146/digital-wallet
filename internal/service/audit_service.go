@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"digital-wallet/internal/model"
-	"digital-wallet/internal/repository"
-	"digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/repository"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
 )
 
 type AuditService interface {

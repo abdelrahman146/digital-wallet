@@ -1,11 +1,11 @@
 package backofficev1
 
 import (
-	"digital-wallet/internal/service"
-	"digital-wallet/pkg/api"
-	"digital-wallet/pkg/errs"
-	"digital-wallet/pkg/logger"
-	"digital-wallet/pkg/validator"
+	"github.com/abdelrahman146/digital-wallet/internal/service"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/pkg/errs"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
+	"github.com/abdelrahman146/digital-wallet/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 )
 

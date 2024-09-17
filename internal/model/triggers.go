@@ -1,7 +1,7 @@
 package model
 
 import (
-	"digital-wallet/pkg/types"
+	"github.com/abdelrahman146/digital-wallet/pkg/types"
 	"gorm.io/gorm"
 	"strconv"
 	"time"

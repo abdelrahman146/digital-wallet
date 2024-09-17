@@ -1,8 +1,8 @@
 package validator
 
 import (
-	"digital-wallet/pkg/logger"
 	"errors"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"digital-wallet/internal/model"
-	"digital-wallet/pkg/types"
+	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/pkg/types"
 	"github.com/shopspring/decimal"
 )
 

@@ -1,4 +1,4 @@
-module digital-wallet
+module github.com/abdelrahman146/digital-wallet
 
 go 1.22.3
 

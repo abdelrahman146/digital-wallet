@@ -1,14 +1,14 @@
 package main
 
 import (
-	backofficev1 "digital-wallet/api/backoffice/v1"
-	_ "digital-wallet/docs"
-	"digital-wallet/internal/repository"
-	"digital-wallet/internal/service"
-	"digital-wallet/pkg/api"
-	"digital-wallet/pkg/errs"
-	"digital-wallet/pkg/logger"
-	"digital-wallet/pkg/resources"
+	backofficev1 "github.com/abdelrahman146/digital-wallet/api/backoffice/v1"
+	_ "github.com/abdelrahman146/digital-wallet/docs"
+	"github.com/abdelrahman146/digital-wallet/internal/repository"
+	"github.com/abdelrahman146/digital-wallet/internal/service"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/pkg/errs"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
+	"github.com/abdelrahman146/digital-wallet/pkg/resources"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/helmet"

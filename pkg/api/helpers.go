@@ -1,7 +1,7 @@
 package api
 
 import (
-	"digital-wallet/pkg/errs"
+	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 	"github.com/gofiber/fiber/v2"
 	"strconv"
 )

@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"digital-wallet/pkg/errs"
+	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 )
 
 func IsAuthorizedUser(ctx context.Context, recordOwner string) error {

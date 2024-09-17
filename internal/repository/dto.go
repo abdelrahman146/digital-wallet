@@ -1,6 +1,6 @@
 package repository
 
-import "digital-wallet/internal/model"
+import "github.com/abdelrahman146/digital-wallet/internal/model"
 
 type ExchangeRequest struct {
 	WalletID       string
