@@ -90,3 +90,14 @@ more information.
 One interesting endpoint is the `POST /api/v1/backoffice/wallet/{walletId}/check-integrity` endpoint which checks the
 integrity of the wallet by calculating the sum of all the wallet accounts and the sum of the transactions and the diff
 should 0.
+
+## Check List
+- [x] Wallets
+- [x] Tiers
+- [x] Users & Accounts
+- [x] Transactions / Exchange / Points Expiry
+- [x] Audit and Integrity Check
+- [ ] Triggers
+- [ ] Programs
+- [ ] User API
+- [ ] Tests
