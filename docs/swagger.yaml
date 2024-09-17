@@ -280,7 +280,7 @@ definitions:
   types.JSONB:
     additionalProperties: true
     type: object
-host: localhost:3401
+host: http://localhost:3401
 info:
   contact:
     name: Abdel Rahman Hussein

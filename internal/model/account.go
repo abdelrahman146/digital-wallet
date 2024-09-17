@@ -10,6 +10,7 @@ type Account struct {
 	ID        string    `gorm:"column:id;primaryKey" json:"id"`
 	WalletID  string    `gorm:"column:wallet_id" json:"walletId"`
 	UserID    string    `gorm:"column:user_id" json:"userId"`
+	User      *User     `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
 	Balance   uint64    `gorm:"column:balance;" json:"balance"`
 	Version   uint64    `gorm:"column:version" json:"version"`
 	IsActive  bool      `gorm:"column:is_active;default:true" json:"isActive"`

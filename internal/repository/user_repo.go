@@ -48,7 +48,7 @@ func (r *userRepo) CreateUser(ctx context.Context, user *model.User) error {
 // FetchUserByID retrieves a user by user ID and preloads related accounts
 func (r *userRepo) FetchUserByID(ctx context.Context, userId string) (*model.User, error) {
 	var user model.User
-	err := r.db.Where("id = ?", userId).Preload("accounts").First(&user).Error
+	err := r.db.Where("id = ?", userId).Preload("Accounts").First(&user).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve user by ID", logger.Field("error", err), logger.Field("userId", userId))
 		return nil, err
@@ -68,7 +68,7 @@ func (r *userRepo) UpdateUserTier(ctx context.Context, userId string, tierId str
 // FetchUsersByTierID retrieves users by their tier ID with pagination and preloads related accounts
 func (r *userRepo) FetchUsersByTierID(ctx context.Context, tierId string, page int, limit int) ([]model.User, error) {
 	var users []model.User
-	err := r.db.Where("tier_id = ?", tierId).Offset((page - 1) * limit).Limit(limit).Preload("accounts").Find(&users).Error
+	err := r.db.Where("tier_id = ?", tierId).Offset((page - 1) * limit).Limit(limit).Preload("Accounts").Find(&users).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve users by tier ID", logger.Field("error", err), logger.Field("tierId", tierId))
 		return nil, err
@@ -90,7 +90,7 @@ func (r *userRepo) CountUsersByTierID(ctx context.Context, tierId string) (int64
 // FetchUsers retrieves all users with pagination and preloads related accounts
 func (r *userRepo) FetchUsers(ctx context.Context, page int, limit int) ([]model.User, error) {
 	var users []model.User
-	err := r.db.Offset((page - 1) * limit).Limit(limit).Preload("accounts").Find(&users).Error
+	err := r.db.Offset((page - 1) * limit).Limit(limit).Preload("Accounts").Find(&users).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve users", logger.Field("error", err))
 		return nil, err

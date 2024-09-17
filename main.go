@@ -33,7 +33,7 @@ import (
 // @contact.name Abdel Rahman Hussein
 // @contact.url https://github.com/abdelrahman146
 
-// @host localhost:3401
+// @host http://localhost:3401
 // @BasePath /api/v1
 func main() {
 	// Initialize the database connection

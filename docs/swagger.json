@@ -10,7 +10,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:3401",
+    "host": "http://localhost:3401",
     "basePath": "/api/v1",
     "paths": {
         "/backoffice/audit/actor/{actor}/{actorId}": {
