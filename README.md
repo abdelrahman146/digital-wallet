@@ -1,13 +1,5 @@
 # Digital Wallet System
 
-```mermaid
-graph LR
-    subgraph public["Public Schema"]
-        wallets[wallets]
-        
-    end
-    
-```
 
 ## Introduction
 
