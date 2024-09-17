@@ -31,7 +31,7 @@ func NewConflictError(text string, code string, err error) CustomError {
 
 func NewUnauthorizedError(text string, code string, err error) CustomError {
 	return CustomError{
-		Message:  utils.Coalesce(text, "Authentication required for the target resources."),
+		Message:  utils.Coalesce(text, "Authorization required for the target resources."),
 		Code:     utils.Coalesce(code, "UNAUTHORIZED"),
 		HttpCode: 401,
 		Original: err,

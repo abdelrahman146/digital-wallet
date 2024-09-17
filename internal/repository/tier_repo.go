@@ -13,7 +13,7 @@ type TierRepo interface {
 	GetTierByID(ctx context.Context, tierId string) (*model.Tier, error)
 	GetTiers(ctx context.Context, page int, limit int) ([]model.Tier, error)
 	GetTotalTiers(ctx context.Context) (int64, error)
-	DeleteTier(ctx context.Context, tierId string) error
+	DeleteTier(ctx context.Context, tier *model.Tier) error
 }
 
 type tierRepo struct {
@@ -62,9 +62,10 @@ func (r *tierRepo) GetTotalTiers(ctx context.Context) (int64, error) {
 	return total, nil
 }
 
-func (r *tierRepo) DeleteTier(ctx context.Context, tierId string) error {
-	if err := r.db.Where("id = ?", tierId).Delete(&model.Tier{}).Error; err != nil {
-		api.GetLogger(ctx).Error("failed to delete tier", logger.Field("error", err), logger.Field("tierId", tierId))
+func (r *tierRepo) DeleteTier(ctx context.Context, tier *model.Tier) error {
+	if err := r.db.Delete(tier).Error; err != nil {
+		api.GetLogger(ctx).Error("failed to delete tier", logger.Field("error", err), logger.Field("tier", tier))
+		return err
 	}
 	return nil
 }

@@ -11,12 +11,16 @@ import (
 )
 
 type ExchangeRateService interface {
+	// CreateExchangeRate creates a new exchange rate
 	CreateExchangeRate(ctx context.Context, req *CreateExchangeRateRequest) (*model.ExchangeRate, error)
+	// GetExchangeRates fetches all exchange rates
 	GetExchangeRates(ctx context.Context, page int, limit int) (*api.List[model.ExchangeRate], error)
+	// GetExchangeRatesByWalletID fetches all exchange rates for a wallet
 	GetExchangeRatesByWalletID(ctx context.Context, walletId string, page int, limit int) (*api.List[model.ExchangeRate], error)
+	// UpdateExchangeRate updates an exchange rate
 	UpdateExchangeRate(ctx context.Context, exchangeRateId string, exchangeRate decimal.Decimal) (*model.ExchangeRate, error)
+	// DeleteExchangeRate deletes an exchange rate
 	DeleteExchangeRate(ctx context.Context, exchangeRateId string) error
-	Exchange(ctx context.Context, fromWalletId, toWalletId, userId, actorType, actorId string, amount uint64) (*ExchangeResponse, error)
 }
 
 type exchangeRateService struct {
@@ -28,12 +32,18 @@ func NewExchangeRateService(repos *repository.Repos) ExchangeRateService {
 }
 
 func (s *exchangeRateService) CreateExchangeRate(ctx context.Context, req *CreateExchangeRateRequest) (*model.ExchangeRate, error) {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
 	exchangeRate := &model.ExchangeRate{
 		FromWalletID: req.FromWalletID,
 		ToWalletID:   req.ToWalletID,
 		TierID:       req.TierID,
 		ExchangeRate: req.ExchangeRate,
 	}
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetRemarks("Exchange rate created")
 	if err := s.repos.ExchangeRate.CreateExchangeRate(ctx, exchangeRate); err != nil {
 		return nil, err
 	}
@@ -41,28 +51,43 @@ func (s *exchangeRateService) CreateExchangeRate(ctx context.Context, req *Creat
 }
 
 func (s *exchangeRateService) GetExchangeRates(ctx context.Context, page int, limit int) (*api.List[model.ExchangeRate], error) {
-	exchangeRates, err := s.repos.ExchangeRate.GetExchangeRates(ctx, page, limit)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
+	exchangeRates, err := s.repos.ExchangeRate.FetchExchangeRates(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.ExchangeRate.GetTotalExchangeRates(ctx)
+	total, err := s.repos.ExchangeRate.CountExchangeRates(ctx)
 	return &api.List[model.ExchangeRate]{Items: exchangeRates, Total: total, Page: page, Limit: limit}, nil
 }
 
 func (s *exchangeRateService) GetExchangeRatesByWalletID(ctx context.Context, walletId string, page int, limit int) (*api.List[model.ExchangeRate], error) {
-	exchangeRates, err := s.repos.ExchangeRate.GetExchangeRatesByWalletID(ctx, walletId, page, limit)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
+	exchangeRates, err := s.repos.ExchangeRate.FetchWalletExchangeRates(ctx, walletId, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.ExchangeRate.GetTotalExchangeRatesByWalletID(ctx, walletId)
+	total, err := s.repos.ExchangeRate.CountWalletExchangeRates(ctx, walletId)
 	return &api.List[model.ExchangeRate]{Items: exchangeRates, Total: total, Page: page, Limit: limit}, nil
 }
 
 func (s *exchangeRateService) UpdateExchangeRate(ctx context.Context, exchangeRateId string, newRate decimal.Decimal) (*model.ExchangeRate, error) {
-	exchangeRate, err := s.repos.ExchangeRate.GetExchangeRateByID(ctx, exchangeRateId)
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("User not authorized")
+		return nil, err
+	}
+	exchangeRate, err := s.repos.ExchangeRate.FetchExchangeRateByID(ctx, exchangeRateId)
 	if err != nil {
 		return nil, err
 	}
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetRemarks("Exchange rate updated")
+	exchangeRate.SetOldRecord(*exchangeRate)
 	exchangeRate.ExchangeRate = newRate
 	if err := s.repos.ExchangeRate.UpdateExchangeRate(ctx, exchangeRate); err != nil {
 		return nil, err
@@ -71,112 +96,16 @@ func (s *exchangeRateService) UpdateExchangeRate(ctx context.Context, exchangeRa
 }
 
 func (s *exchangeRateService) DeleteExchangeRate(ctx context.Context, exchangeRateId string) error {
-	exchangeRate, err := s.repos.ExchangeRate.GetExchangeRateByID(ctx, exchangeRateId)
+	if err := api.IsAdmin(ctx); err != nil {
+		return err
+	}
+	exchangeRate, err := s.repos.ExchangeRate.FetchExchangeRateByID(ctx, exchangeRateId)
 	if exchangeRate == nil {
 		api.GetLogger(ctx).Error("Exchange Rate not found", logger.Field("exchangeRateId", exchangeRateId))
 		return errs.NewNotFoundError("Exchange Rate not found", "EXCHANGE_RATE_NOT_FOUND", err)
 	}
-	return s.repos.ExchangeRate.DeleteExchangeRate(ctx, exchangeRateId)
-}
-
-func (s *exchangeRateService) Exchange(ctx context.Context, fromWalletId, toWalletId, userId, actorType, actorId string, amount uint64) (*ExchangeResponse, error) {
-	fromWallet, err := s.repos.Wallet.GetWalletByID(ctx, fromWalletId)
-	if err != nil {
-		return nil, err
-	}
-	if fromWallet == nil {
-		api.GetLogger(ctx).Error("From Wallet not found", logger.Field("fromWalletId", fromWalletId))
-		return nil, errs.NewNotFoundError("fromWallet not found", "FROM_WALLET_NOT_FOUND", nil)
-	}
-	toWallet, err := s.repos.Wallet.GetWalletByID(ctx, toWalletId)
-	if err != nil {
-		return nil, err
-	}
-	if toWallet == nil {
-		api.GetLogger(ctx).Error("To Wallet not found", logger.Field("toWalletId", toWalletId))
-		return nil, errs.NewNotFoundError("toWallet not found", "TO_WALLET_NOT_FOUND", nil)
-	}
-	user, err := s.repos.User.GetUserByID(ctx, userId)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		api.GetLogger(ctx).Error("User not found", logger.Field("userId", userId))
-		return nil, errs.NewNotFoundError("User not found", "USER_NOT_FOUND", nil)
-	}
-	exchangeRate, err := s.repos.ExchangeRate.GetExchangeRate(ctx, fromWalletId, toWalletId, user.TierID)
-	if err != nil {
-		return nil, err
-	}
-	if exchangeRate == nil {
-		api.GetLogger(ctx).Error("Exchange Rate not found", logger.Field("fromWalletId", fromWalletId), logger.Field("toWalletId", toWalletId), logger.Field("tierId", user.TierID))
-		return nil, errs.NewNotFoundError("Exchange Rate not found", "EXCHANGE_RATE_NOT_FOUND", nil)
-	}
-	fromAccount, err := s.repos.Account.GetAccountByUserID(ctx, fromWalletId, userId)
-	if err != nil {
-		return nil, err
-	}
-	if fromAccount == nil {
-		api.GetLogger(ctx).Error("From Account not found", logger.Field("fromWalletId", fromWalletId), logger.Field("userId", userId))
-		return nil, errs.NewNotFoundError("From Account not found", "FROM_ACCOUNT_NOT_FOUND", nil)
-	}
-	toAccount, err := s.repos.Account.GetAccountByUserID(ctx, toWalletId, userId)
-	if err != nil {
-		return nil, err
-	}
-	if toAccount == nil {
-		toAccount = &model.Account{
-			UserID: userId,
-		}
-		if err = s.repos.Account.CreateAccount(ctx, toWalletId, toAccount); err != nil {
-			return nil, err
-		}
-	}
-	if amount > fromAccount.Balance {
-		api.GetLogger(ctx).Error("Insufficient balance", logger.Field("amount", amount), logger.Field("balance", fromAccount.Balance))
-		return nil, errs.NewPaymentRequiredError("Insufficient balance", "INSUFFICIENT_BALANCE", nil)
-	}
-	fromTransaction := &model.Transaction{
-		AccountID: fromAccount.ID,
-		Amount:    amount,
-		Type:      model.TransactionTypeDebit,
-		ActorType: actorType,
-		ActorID:   actorId,
-	}
-	amountToCredit := decimal.NewFromUint64(amount)
-	if toWallet.IsMonetary {
-		amountToCredit = amountToCredit.Div(decimal.NewFromInt(100))
-	}
-	amountToCredit = amountToCredit.Mul(exchangeRate.ExchangeRate)
-	if toWallet.IsMonetary {
-		amountToCredit = amountToCredit.Mul(decimal.NewFromInt(100))
-	}
-	toTransaction := &model.Transaction{
-		AccountID: toAccount.ID,
-		Amount:    amountToCredit.BigInt().Uint64(),
-		Type:      model.TransactionTypeCredit,
-		ActorType: actorType,
-		ActorID:   actorId,
-	}
-	from := &repository.ExchangeRequest{
-		WalletID:       fromWalletId,
-		Transaction:    fromTransaction,
-		AccountVersion: fromAccount.Version,
-	}
-
-	to := &repository.ExchangeRequest{
-		WalletID:       toWalletId,
-		Transaction:    toTransaction,
-		AccountVersion: toAccount.Version,
-	}
-
-	if err := s.repos.ExchangeRate.Exchange(ctx, from, to); err != nil {
-		return nil, err
-	}
-	resp := &ExchangeResponse{
-		FromTransaction: *fromTransaction,
-		ToTransaction:   *toTransaction,
-	}
-	return resp, nil
-
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetRemarks("Exchange rate deleted")
+	exchangeRate.SetOldRecord(exchangeRate)
+	return s.repos.ExchangeRate.RemoveExchangeRate(ctx, exchangeRate)
 }

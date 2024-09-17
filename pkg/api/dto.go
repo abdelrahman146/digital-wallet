@@ -1,5 +1,11 @@
 package api
 
+const (
+	AppActorAdmin  = "BACKOFFICE"
+	AppActorUser   = "USER"
+	AppActorSystem = "SYSTEM"
+)
+
 type List[T any] struct {
 	Items []T   `json:"items"`
 	Page  int   `json:"page"`

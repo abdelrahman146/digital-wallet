@@ -9,88 +9,86 @@ import (
 )
 
 type WalletRepo interface {
+	// CreateWallet Creates a new wallet
 	CreateWallet(ctx context.Context, wallet *model.Wallet) error
-	GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
+	// FetchWalletByID Retrieves a wallet by its wallet ID
+	FetchWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
+	// UpdateWallet Updates an existing wallet
 	UpdateWallet(ctx context.Context, wallet *model.Wallet) error
-	GetWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error)
-	GetTotalWallets(ctx context.Context) (int64, error)
-	DeleteWallet(ctx context.Context, walletId string) error
+	// FetchWallets Retrieves a paginated list of wallets
+	FetchWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error)
+	// CountTotalWallets Retrieves the total number of wallets
+	CountTotalWallets(ctx context.Context) (int64, error)
+	// RemoveWallet Deletes a wallet by its wallet ID
+	RemoveWallet(ctx context.Context, wallet *model.Wallet) error
 }
 
 type walletRepo struct {
 	db *gorm.DB
 }
 
+// NewWalletRepo initializes the wallet repository
 func NewWalletRepo(db *gorm.DB) WalletRepo {
 	return &walletRepo{db: db}
 }
 
+// CreateWallet creates a new wallet and its associated schema
 func (r *walletRepo) CreateWallet(ctx context.Context, wallet *model.Wallet) error {
+	// Create the wallet in the database
 	if err := r.db.Create(wallet).Error; err != nil {
-		api.GetLogger(ctx).Error("Error while creating wallet", logger.Field("error", err), logger.Field("wallet", wallet))
-		return err
-	}
-	err := r.db.Exec("SELECT create_wallet_schema(?);", wallet.ID).Error
-	if err != nil {
-		api.GetLogger(ctx).Error("Error while creating wallet schema", logger.Field("error", err), logger.Field("wallet", wallet))
+		api.GetLogger(ctx).Error("Failed to create wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
 	return nil
 }
 
-func (r *walletRepo) GetWalletByID(ctx context.Context, walletId string) (*model.Wallet, error) {
+// FetchWalletByID retrieves a wallet by its wallet ID
+func (r *walletRepo) FetchWalletByID(ctx context.Context, walletId string) (*model.Wallet, error) {
 	var wallet model.Wallet
 	err := r.db.Where("id = ?", walletId).First(&wallet).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("Error while fetching wallet by id", logger.Field("error", err), logger.Field("walletId", walletId))
+		api.GetLogger(ctx).Error("Failed to fetch wallet by ID", logger.Field("error", err), logger.Field("walletId", walletId))
 		return nil, err
 	}
 	return &wallet, nil
 }
 
+// UpdateWallet updates an existing wallet in the database
 func (r *walletRepo) UpdateWallet(ctx context.Context, wallet *model.Wallet) error {
 	if err := r.db.Save(wallet).Error; err != nil {
-		api.GetLogger(ctx).Error("Error while updating wallet", logger.Field("error", err), logger.Field("wallet", wallet))
+		api.GetLogger(ctx).Error("Failed to update wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
 	return nil
 }
 
-func (r *walletRepo) GetWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error) {
+// FetchWallets retrieves a paginated list of wallets from the database
+func (r *walletRepo) FetchWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error) {
 	var wallets []model.Wallet
 	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("Error while fetching wallets", logger.Field("error", err))
+		api.GetLogger(ctx).Error("Failed to fetch wallets", logger.Field("error", err))
 		return nil, err
 	}
 	return wallets, nil
 }
 
-func (r *walletRepo) DeleteWallet(ctx context.Context, walletId string) error {
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", walletId).Delete(&model.Wallet{}).Error; err != nil {
-			api.GetLogger(ctx).Error("Error while deleting wallet", logger.Field("error", err), logger.Field("walletId", walletId))
-			return err
-		}
-		err := tx.Exec("DROP SCHEMA IF EXISTS " + walletId + "_wallet CASCADE;").Error
-		if err != nil {
-			api.GetLogger(ctx).Error("Error while dropping wallet schema", logger.Field("error", err), logger.Field("walletId", walletId))
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *walletRepo) GetTotalWallets(ctx context.Context) (int64, error) {
+// CountTotalWallets retrieves the total number of wallets in the database
+func (r *walletRepo) CountTotalWallets(ctx context.Context) (int64, error) {
 	var total int64
 	err := r.db.Model(&model.Wallet{}).Count(&total).Error
 	if err != nil {
-		api.GetLogger(ctx).Error("Error while fetching total wallets", logger.Field("error", err))
+		api.GetLogger(ctx).Error("Failed to count total wallets", logger.Field("error", err))
 		return 0, err
 	}
 	return total, nil
+}
+
+// RemoveWallet deletes a wallet from the database by its wallet ID
+func (r *walletRepo) RemoveWallet(ctx context.Context, wallet *model.Wallet) error {
+	if err := r.db.Delete(wallet).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete wallet", logger.Field("error", err), logger.Field("wallet", wallet))
+		return err
+	}
+	return nil
 }

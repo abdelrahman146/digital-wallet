@@ -1,7 +1,7 @@
 package main
 
 import (
-	"digital-wallet/internal/handler"
+	backofficev1 "digital-wallet/api/backoffice/v1"
 	"digital-wallet/internal/repository"
 	"digital-wallet/internal/service"
 	"digital-wallet/pkg/api"
@@ -27,7 +27,7 @@ func main() {
 	// Initialize the database connection
 	db := resources.InitDB()
 
-	// Create a new Fiber app
+	// CreateTransaction a new Fiber app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			status, resp := api.NewErrorResponse(err)
@@ -46,9 +46,6 @@ func main() {
 	}))
 	app.Use(requestid.New())
 
-	// Custom middleware to create app context
-	app.Use(api.CreateAppContext())
-
 	app.Get("/metrics", monitor.New())
 	app.Use(fiberLogger.New(fiberLogger.Config{
 		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
@@ -56,6 +53,7 @@ func main() {
 
 	// Define repositories
 	repos := &repository.Repos{
+		Audit:        repository.NewAuditRepo(db),
 		Account:      repository.NewAccountRepo(db),
 		Transaction:  repository.NewTransactionRepo(db),
 		Wallet:       repository.NewWalletRepo(db),
@@ -66,6 +64,7 @@ func main() {
 
 	// Define services
 	services := &service.Services{
+		Audit:        service.NewAuditService(repos),
 		Wallet:       service.NewWalletService(repos),
 		Transaction:  service.NewTransactionService(repos),
 		Account:      service.NewAccountService(repos),
@@ -74,19 +73,12 @@ func main() {
 		ExchangeRate: service.NewExchangeRateService(repos),
 	}
 
-	// Define versioned routes
-	v1 := app.Group("/v1")
-
-	handler.NewV1WalletHandler(v1, services)
-	handler.NewV1AccountHandler(v1, services)
-	handler.NewV1TransactionsHandler(v1, services)
-	handler.NewV1ExchangeRateHandler(v1, services)
-	handler.NewV1TierHandler(v1, services)
-	handler.NewV1UserHandler(v1, services)
+	// Define routes
+	backofficev1.New(app, services)
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {
-		api.GetLogger(c.Context()).Info("Route not found", logger.Field("path", c.Path()))
+		logger.GetLogger().Info("Route not found", logger.Field("path", c.Path()))
 		return errs.NewNotFoundError("Route not found", "", nil)
 	})
 
