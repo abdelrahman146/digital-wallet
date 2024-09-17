@@ -16,9 +16,9 @@ type Wallet struct {
 	LimitPerUser      *uint64         `gorm:"column:limit_per_user" json:"limitPerUser"`
 	LimitGlobal       *uint64         `gorm:"column:limit_global" json:"limitGlobal"`
 	MinimumWithdrawal *uint64         `gorm:"column:minimum_withdrawal" json:"minimumWithdrawal"`
-	IsMonetary        bool            `gorm:"column:is_monetary" json:"isMonetary"`
-	IsActive          bool            `gorm:"column:is_active" json:"isActive"`
-	IsArchived        bool            `gorm:"column:is_archived" json:"isArchived"`
+	IsMonetary        bool            `gorm:"column:is_monetary;default:false" json:"isMonetary"`
+	IsActive          bool            `gorm:"column:is_active;default:true" json:"isActive"`
+	IsArchived        bool            `gorm:"column:is_archived;default:false" json:"isArchived"`
 	CreatedAt         time.Time       `gorm:"column:created_at" json:"createdAt"`
 	UpdatedAt         time.Time       `gorm:"column:updated_at" json:"updatedAt"`
 }
@@ -28,7 +28,7 @@ func (m *Wallet) TableName() string {
 }
 
 func (m *Wallet) AfterCreate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationCreate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationCreate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (m *Wallet) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *Wallet) AfterUpdate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationUpdate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationUpdate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (m *Wallet) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Wallet) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, nil)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationDelete, m.ID, nil)
 	if err != nil {
 		return err
 	}

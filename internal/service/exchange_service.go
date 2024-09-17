@@ -42,7 +42,7 @@ func (s *exchangeRateService) CreateExchangeRate(ctx context.Context, req *Creat
 		TierID:       req.TierID,
 		ExchangeRate: req.ExchangeRate,
 	}
-	exchangeRate.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	exchangeRate.SetRemarks("Exchange rate created")
 	if err := s.repos.ExchangeRate.CreateExchangeRate(ctx, exchangeRate); err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (s *exchangeRateService) UpdateExchangeRate(ctx context.Context, exchangeRa
 	if err != nil {
 		return nil, err
 	}
-	exchangeRate.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	exchangeRate.SetRemarks("Exchange rate updated")
 	exchangeRate.SetOldRecord(*exchangeRate)
 	exchangeRate.ExchangeRate = newRate
@@ -104,7 +104,7 @@ func (s *exchangeRateService) DeleteExchangeRate(ctx context.Context, exchangeRa
 		api.GetLogger(ctx).Error("Exchange Rate not found", logger.Field("exchangeRateId", exchangeRateId))
 		return errs.NewNotFoundError("Exchange Rate not found", "EXCHANGE_RATE_NOT_FOUND", err)
 	}
-	exchangeRate.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	exchangeRate.SetRemarks("Exchange rate deleted")
 	exchangeRate.SetOldRecord(exchangeRate)
 	return s.repos.ExchangeRate.RemoveExchangeRate(ctx, exchangeRate)

@@ -44,7 +44,7 @@ func (m *Transaction) TableName() string {
 }
 
 func (m *Transaction) AfterCreate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationCreate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationCreate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (m *Transaction) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *Transaction) AfterUpdate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationUpdate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationUpdate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (m *Transaction) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Transaction) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, nil)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationDelete, m.ID, nil)
 	if err != nil {
 		return err
 	}

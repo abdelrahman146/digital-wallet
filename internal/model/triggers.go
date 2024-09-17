@@ -22,7 +22,7 @@ func (m *Trigger) TableName() string {
 }
 
 func (m *Trigger) AfterCreate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationCreate, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationCreate, strconv.FormatUint(m.ID, 10), m)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (m *Trigger) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *Trigger) AfterUpdate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationUpdate, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationUpdate, strconv.FormatUint(m.ID, 10), m)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (m *Trigger) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Trigger) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
 	if err != nil {
 		return err
 	}

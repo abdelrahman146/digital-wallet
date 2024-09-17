@@ -8,7 +8,7 @@ import (
 func IsAuthorizedUser(ctx context.Context, recordOwner string) error {
 	actor := GetActor(ctx)
 	actorId := GetActorID(ctx)
-	if actor != nil && actorId != nil && (*actor == AppActorAdmin || *actor == AppActorSystem || *actorId == recordOwner) {
+	if actor != "" && actorId != "" && (actor == AppActorAdmin || actor == AppActorSystem || actorId == recordOwner) {
 		return nil
 	}
 	return errs.NewUnauthorizedError("Unauthorized", "", nil)
@@ -16,7 +16,7 @@ func IsAuthorizedUser(ctx context.Context, recordOwner string) error {
 
 func IsAdmin(ctx context.Context) error {
 	actor := GetActor(ctx)
-	if actor != nil && (*actor == AppActorAdmin || *actor == AppActorSystem) {
+	if actor != "" && (actor == AppActorAdmin || actor == AppActorSystem) {
 		return nil
 	}
 	return errs.NewUnauthorizedError("Unauthorized", "", nil)
@@ -24,7 +24,7 @@ func IsAdmin(ctx context.Context) error {
 
 func IsSystem(ctx context.Context) error {
 	actor := GetActor(ctx)
-	if actor != nil && *actor == AppActorSystem {
+	if actor == AppActorSystem {
 		return nil
 	}
 	return errs.NewUnauthorizedError("Unauthorized", "", nil)

@@ -37,7 +37,7 @@ func (s *tierService) CreateTier(ctx context.Context, req *CreateTierRequest) (*
 		ID:   req.ID,
 		Name: req.Name,
 	}
-	tier.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	tier.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	tier.SetRemarks("Tier created")
 	if err := s.repos.Tier.CreateTier(ctx, tier); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (s *tierService) DeleteTier(ctx context.Context, tierId string) error {
 	if err != nil {
 		return err
 	}
-	tier.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	tier.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	tier.SetRemarks("Tier deleted")
 	tier.SetOldRecord(tier)
 	return s.repos.Tier.DeleteTier(ctx, tier)

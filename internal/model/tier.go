@@ -19,7 +19,7 @@ func (m *Tier) TableName() string {
 }
 
 func (m *Tier) AfterCreate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationCreate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationCreate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (m *Tier) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *Tier) AfterUpdate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationUpdate, m.ID, m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationUpdate, m.ID, m)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (m *Tier) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *Tier) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, m.ID, nil)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationDelete, m.ID, nil)
 	if err != nil {
 		return err
 	}

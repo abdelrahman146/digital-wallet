@@ -27,16 +27,17 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS audit
 (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    operation  TEXT                           NOT NULL,
-    table_name TEXT                           NOT NULL,
-    record_id  TEXT                           NOT NULL,
-    actor      TEXT                           NOT NULL,
+    id         UUID      DEFAULT uuid_generate_v4(),
+    operation  TEXT                    NOT NULL,
+    table_name TEXT                    NOT NULL,
+    record_id  TEXT                    NOT NULL,
+    actor      TEXT                    NOT NULL,
     actor_id   TEXT,
     remarks    TEXT,
     old_record JSONB,
     new_record JSONB,
-    created_at TIMESTAMP        DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+    PRIMARY KEY (id, created_at),
     CONSTRAINT check_audit_valid_operation CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE'))
 ) PARTITION BY RANGE (created_at);
 
@@ -136,14 +137,14 @@ CREATE TABLE IF NOT EXISTS programs
 
 CREATE TABLE IF NOT EXISTS accounts
 (
-    id         TEXT PRIMARY KEY DEFAULT generate_account_id(wallet_id) CHECK (length(id) > 9),
+    id         TEXT PRIMARY KEY CHECK (length(id) > 9),
     wallet_id  TEXT REFERENCES wallets (id) ON DELETE CASCADE NOT NULL,
     user_id    TEXT REFERENCES users (id) ON DELETE CASCADE   NOT NULL,
-    balance    BIGINT           DEFAULT 0 CHECK (balance >= 0),
-    version    BIGINT           DEFAULT 0                     NOT NULL CHECK (version >= 0),
-    is_active  BOOLEAN          DEFAULT TRUE                  NOT NULL,
-    created_at TIMESTAMP        DEFAULT NOW()                 NOT NULL,
-    updated_at TIMESTAMP        DEFAULT NOW()                 NOT NULL,
+    balance    BIGINT    DEFAULT 0 CHECK (balance >= 0),
+    version    BIGINT    DEFAULT 0                            NOT NULL CHECK (version >= 0),
+    is_active  BOOLEAN   DEFAULT TRUE                         NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()                        NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()                        NOT NULL,
     CONSTRAINT unique_wallet_user UNIQUE (wallet_id, user_id)
 );
 

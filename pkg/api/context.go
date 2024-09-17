@@ -25,14 +25,14 @@ func GetLogger(ctx context.Context) logger.Logger {
 	return ctx.Value("logger").(logger.Logger)
 }
 
-func GetRequestID(ctx context.Context) *string {
-	return ctx.Value("requestId").(*string)
+func GetRequestID(ctx context.Context) string {
+	return ctx.Value("requestId").(string)
 }
 
-func GetActorID(ctx context.Context) *string {
-	return ctx.Value("actorId").(*string)
+func GetActorID(ctx context.Context) string {
+	return ctx.Value("actorId").(string)
 }
 
-func GetActor(ctx context.Context) *string {
-	return ctx.Value("actor").(*string)
+func GetActor(ctx context.Context) string {
+	return ctx.Value("actor").(string)
 }

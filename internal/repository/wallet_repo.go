@@ -39,13 +39,6 @@ func (r *walletRepo) CreateWallet(ctx context.Context, wallet *model.Wallet) err
 		api.GetLogger(ctx).Error("Failed to create wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
-
-	// Create the wallet schema in the database
-	if err := r.db.Exec("SELECT create_wallet_schema(?);", wallet.ID).Error; err != nil {
-		api.GetLogger(ctx).Error("Failed to create wallet schema", logger.Field("error", err), logger.Field("wallet", wallet))
-		return err
-	}
-
 	return nil
 }
 

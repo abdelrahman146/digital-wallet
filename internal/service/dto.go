@@ -29,7 +29,7 @@ type CreateTierRequest struct {
 }
 
 type CreateWalletRequest struct {
-	ID                string  `json:"id,omitempty" validate:"required,min=1,max=4"`
+	ID                string  `json:"id,omitempty" validate:"required"`
 	Name              string  `json:"name,omitempty" validate:"required,min=1,max=100"`
 	Description       *string `json:"description,omitempty" validate:"max=255"`
 	Currency          string  `json:"currency,omitempty" validate:"required,min=1,max=4"`

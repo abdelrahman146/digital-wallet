@@ -47,7 +47,7 @@ func (s *accountService) CreateAccount(ctx context.Context, walletId, userId str
 	account := &model.Account{
 		UserID: userId,
 	}
-	account.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	account.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	account.SetRemarks(fmt.Sprintf("Account created for user %s", userId))
 	err = s.repos.Account.CreateAccount(ctx, account)
 	if err != nil {
@@ -113,7 +113,7 @@ func (s *accountService) DeleteAccount(ctx context.Context, accountId string) er
 	if account == nil {
 		return errs.NewNotFoundError("Account not found", "ACCOUNT_NOT_FOUND", err)
 	}
-	account.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	account.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	account.SetRemarks("Account deleted")
 	account.SetOldRecord(account)
 	return s.repos.Account.RemoveAccount(ctx, account)

@@ -53,6 +53,7 @@ func main() {
 
 	// Define repositories
 	repos := &repository.Repos{
+		Audit:        repository.NewAuditRepo(db),
 		Account:      repository.NewAccountRepo(db),
 		Transaction:  repository.NewTransactionRepo(db),
 		Wallet:       repository.NewWalletRepo(db),
@@ -63,6 +64,7 @@ func main() {
 
 	// Define services
 	services := &service.Services{
+		Audit:        service.NewAuditService(repos),
 		Wallet:       service.NewWalletService(repos),
 		Transaction:  service.NewTransactionService(repos),
 		Account:      service.NewAccountService(repos),
@@ -76,7 +78,7 @@ func main() {
 
 	// Undefined route handler
 	app.Use(func(c *fiber.Ctx) error {
-		api.GetLogger(c.Context()).Info("Route not found", logger.Field("path", c.Path()))
+		logger.GetLogger().Info("Route not found", logger.Field("path", c.Path()))
 		return errs.NewNotFoundError("Route not found", "", nil)
 	})
 

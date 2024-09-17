@@ -24,7 +24,7 @@ func (m *ExchangeRate) TableName() string {
 }
 
 func (m *ExchangeRate) AfterCreate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationCreate, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationCreate, strconv.FormatUint(m.ID, 10), m)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (m *ExchangeRate) AfterCreate(tx *gorm.DB) error {
 }
 
 func (m *ExchangeRate) AfterUpdate(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationUpdate, strconv.FormatUint(m.ID, 10), m)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationUpdate, strconv.FormatUint(m.ID, 10), m)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (m *ExchangeRate) AfterUpdate(tx *gorm.DB) error {
 }
 
 func (m *ExchangeRate) AfterDelete(tx *gorm.DB) error {
-	audit, err := m.CreateAudit(AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
+	audit, err := m.CreateAudit(m.TableName(), AuditOperationDelete, strconv.FormatUint(m.ID, 10), nil)
 	if err != nil {
 		return err
 	}

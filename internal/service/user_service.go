@@ -105,7 +105,7 @@ func (s *userService) DeleteUser(ctx context.Context, userId string) error {
 		api.GetLogger(ctx).Error("User not found", logger.Field("userId", userId), logger.Field("error", err))
 		return errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
 	}
-	user.SetActor(*api.GetActor(ctx), api.GetActorID(ctx))
+	user.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	user.SetRemarks("User deleted")
 	user.SetOldRecord(*user)
 	return s.repos.User.RemoveUser(ctx, user)
