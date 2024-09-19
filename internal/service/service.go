@@ -8,4 +8,5 @@ type Services struct {
 	Tier         TierService
 	User         UserService
 	ExchangeRate ExchangeRateService
+	Trigger      TriggerService
 }

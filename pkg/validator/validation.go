@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	"math"
+	"regexp"
 )
 
 type validatorStruct struct {
@@ -32,10 +33,18 @@ func (v *validatorStruct) init() error {
 	if err := v.validate.RegisterValidation("decimal2", v.Decimal2); err != nil {
 		return err
 	}
+	if err := v.validate.RegisterValidation("slug", v.Slug); err != nil {
+		return err
+	}
+	if err := v.validate.RegisterValidation("alpha", v.Alpha); err != nil {
+		return err
+	}
 	if err := en_translations.RegisterDefaultTranslations(v.validate, v.trans); err != nil {
 		return err
 	}
-	return v.registerDecimal2Translation()
+	v.registerDecimal2Translation()
+	v.RegisterSlugTranslation()
+	return v.RegisterAlphaTranslation()
 }
 
 func (v *validatorStruct) ValidateStruct(s interface{}) error {
@@ -67,6 +76,42 @@ func (v *validatorStruct) registerDecimal2Translation() error {
 		return ut.Add("decimal2", "{0} must have two digits only", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
 		t, _ := ut.T("decimal2", fe.Field())
+		return t
+	})
+}
+
+func (v *validatorStruct) Slug(fl validator.FieldLevel) bool {
+	value, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+	matched, _ := regexp.MatchString("^[a-z]+(?:[-_][a-z]+)*$", value)
+	return matched
+}
+
+func (v *validatorStruct) RegisterSlugTranslation() error {
+	return v.validate.RegisterTranslation("slug", v.trans, func(ut ut.Translator) error {
+		return ut.Add("slug", "{0} must be a valid letters only slug", true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("slug", fe.Field())
+		return t
+	})
+}
+
+func (v *validatorStruct) Alpha(fl validator.FieldLevel) bool {
+	value, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+	matched, _ := regexp.MatchString("^[a-zA-Z]+$", value)
+	return matched
+}
+
+func (v *validatorStruct) RegisterAlphaTranslation() error {
+	return v.validate.RegisterTranslation("alpha", v.trans, func(ut ut.Translator) error {
+		return ut.Add("alpha", "{0} must have letters only", true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("alpha", fe.Field())
 		return t
 	})
 }

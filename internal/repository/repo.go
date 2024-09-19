@@ -8,4 +8,6 @@ type Repos struct {
 	Tier         TierRepo
 	User         UserRepo
 	ExchangeRate ExchangeRateRepo
+	Program      ProgramRepo
+	Trigger      TriggerRepo
 }

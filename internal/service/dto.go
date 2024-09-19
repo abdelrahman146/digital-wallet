@@ -6,6 +6,18 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type CreateTriggerRequest struct {
+	Name       string                 `json:"name,omitempty" validate:"required,min=1,max=100"`
+	Slug       string                 `json:"slug,omitempty" validate:"required,slug"`
+	Properties map[string]interface{} `json:"properties,omitempty" validate:"required,json"`
+}
+
+type UpdateTriggerRequest struct {
+	Name       *string                 `json:"name,omitempty" validate:"omitempty,min=1,max=100"`
+	Slug       *string                 `json:"slug,omitempty" validate:"omitempty,slug"`
+	Properties *map[string]interface{} `json:"properties,omitempty" validate:"omitempty,json"`
+}
+
 type ExchangeResponse struct {
 	FromTransaction model.Transaction `json:"fromTransaction"`
 	ToTransaction   model.Transaction `json:"toTransaction"`

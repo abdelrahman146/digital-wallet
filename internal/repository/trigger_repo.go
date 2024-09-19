@@ -1,0 +1,106 @@
+package repository
+
+import (
+	"context"
+	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/pkg/api"
+	"github.com/abdelrahman146/digital-wallet/pkg/logger"
+	"gorm.io/gorm"
+)
+
+type TriggerRepo interface {
+	// CreateTrigger creates a new trigger
+	CreateTrigger(ctx context.Context, trigger *model.Trigger) error
+	// UpdateTrigger updates an existing trigger
+	UpdateTrigger(ctx context.Context, trigger *model.Trigger) error
+	// DeleteTrigger deletes a trigger
+	DeleteTrigger(ctx context.Context, trigger *model.Trigger) error
+	// FetchTriggerByID retrieves a trigger by its ID
+	FetchTriggerByID(ctx context.Context, id uint64) (*model.Trigger, error)
+	// FetchTriggerBySlug retrieves a trigger by its slug
+	FetchTriggerBySlug(ctx context.Context, slug string) (*model.Trigger, error)
+	// FetchTriggers retrieves a paginated list of triggers
+	FetchTriggers(ctx context.Context, page int, limit int) ([]model.Trigger, error)
+	// CountTriggers retrieves the total number of triggers
+	CountTriggers(ctx context.Context) (int64, error)
+}
+
+type triggerRepo struct {
+	db *gorm.DB
+}
+
+// NewTriggerRepo initializes the trigger repository
+func NewTriggerRepo(db *gorm.DB) TriggerRepo {
+	return &triggerRepo{db: db}
+}
+
+// CreateTrigger creates a new trigger in the database
+func (r *triggerRepo) CreateTrigger(ctx context.Context, trigger *model.Trigger) error {
+	if err := r.db.Create(trigger).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to create trigger", logger.Field("error", err), logger.Field("trigger", trigger))
+		return err
+	}
+	return nil
+}
+
+// UpdateTrigger updates an existing trigger in the database
+func (r *triggerRepo) UpdateTrigger(ctx context.Context, trigger *model.Trigger) error {
+	if err := r.db.Save(trigger).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to update trigger", logger.Field("error", err), logger.Field("trigger", trigger))
+		return err
+	}
+	return nil
+}
+
+// DeleteTrigger deletes a trigger from the database
+func (r *triggerRepo) DeleteTrigger(ctx context.Context, trigger *model.Trigger) error {
+	if err := r.db.Delete(trigger).Error; err != nil {
+		api.GetLogger(ctx).Error("Failed to delete trigger", logger.Field("error", err), logger.Field("trigger", trigger))
+		return err
+	}
+	return nil
+}
+
+// FetchTriggerByID retrieves a trigger by its ID
+func (r *triggerRepo) FetchTriggerByID(ctx context.Context, id uint64) (*model.Trigger, error) {
+	var trigger model.Trigger
+	err := r.db.Where("id = ?", id).First(&trigger).Error
+	if err != nil {
+		api.GetLogger(ctx).Error("Failed to retrieve trigger by ID", logger.Field("error", err), logger.Field("triggerId", id))
+		return nil, err
+	}
+	return &trigger, nil
+}
+
+// FetchTriggerBySlug retrieves a trigger by its slug
+func (r *triggerRepo) FetchTriggerBySlug(ctx context.Context, slug string) (*model.Trigger, error) {
+	var trigger model.Trigger
+	err := r.db.Where("slug = ?", slug).First(&trigger).Error
+	if err != nil {
+		api.GetLogger(ctx).Error("Failed to retrieve trigger by slug", logger.Field("error", err), logger.Field("triggerSlug", slug))
+		return nil, err
+	}
+	return &trigger, nil
+}
+
+// FetchTriggers retrieves a paginated list of triggers
+func (r *triggerRepo) FetchTriggers(ctx context.Context, page int, limit int) ([]model.Trigger, error) {
+	var triggers []model.Trigger
+	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&triggers).Error
+	if err != nil {
+		api.GetLogger(ctx).Error("Failed to retrieve triggers", logger.Field("error", err))
+		return nil, err
+	}
+	return triggers, nil
+}
+
+// CountTriggers retrieves the total number of triggers
+func (r *triggerRepo) CountTriggers(ctx context.Context) (int64, error) {
+	var total int64
+	err := r.db.Model(&model.Trigger{}).Count(&total).Error
+	if err != nil {
+		api.GetLogger(ctx).Error("Failed to retrieve total triggers count", logger.Field("error", err))
+		return 0, err
+	}
+	return total, nil
+}
