@@ -116,5 +116,5 @@ func (s *accountService) DeleteAccount(ctx context.Context, accountId string) er
 	account.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	account.SetRemarks("Account deleted")
 	account.SetOldRecord(account)
-	return s.repos.Account.RemoveAccount(ctx, account)
+	return s.repos.Account.DeleteAccount(ctx, account)
 }

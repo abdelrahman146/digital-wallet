@@ -11,6 +11,8 @@ import (
 type AccountRepo interface {
 	// CreateAccount Creates a new account
 	CreateAccount(ctx context.Context, account *model.Account) error
+	// DeleteAccount Deletes an account
+	DeleteAccount(ctx context.Context, account *model.Account) error
 	// FetchAccountByID Retrieves an account by its account ID
 	FetchAccountByID(ctx context.Context, accountId string) (*model.Account, error)
 	// FetchAccountByUserID Retrieves an account by wallet ID and user ID
@@ -21,8 +23,6 @@ type AccountRepo interface {
 	CountWalletAccounts(ctx context.Context, walletId string) (int64, error)
 	// SumWalletAccounts Retrieves the sum of account balances for a wallet
 	SumWalletAccounts(ctx context.Context, walletId string) (uint64, error)
-	// RemoveAccount Deletes an account
-	RemoveAccount(ctx context.Context, account *model.Account) error
 }
 
 type accountRepo struct {
@@ -105,8 +105,8 @@ func (r *accountRepo) CountWalletAccounts(ctx context.Context, walletId string) 
 	return total, nil
 }
 
-// RemoveAccount deletes an account from the database
-func (r *accountRepo) RemoveAccount(ctx context.Context, account *model.Account) error {
+// DeleteAccount deletes an account from the database
+func (r *accountRepo) DeleteAccount(ctx context.Context, account *model.Account) error {
 	if err := r.resources.DB.Delete(account).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete account", logger.Field("error", err), logger.Field("account", account))
 		return err

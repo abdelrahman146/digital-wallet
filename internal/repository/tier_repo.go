@@ -9,11 +9,16 @@ import (
 )
 
 type TierRepo interface {
+	// CreateTier creates a new tier
 	CreateTier(ctx context.Context, tier *model.Tier) error
-	GetTierByID(ctx context.Context, tierId string) (*model.Tier, error)
-	GetTiers(ctx context.Context, page int, limit int) ([]model.Tier, error)
-	GetTotalTiers(ctx context.Context) (int64, error)
+	// DeleteTier deletes a tier
 	DeleteTier(ctx context.Context, tier *model.Tier) error
+	// FetchTierByID retrieves a tier by its ID
+	FetchTierByID(ctx context.Context, tierId string) (*model.Tier, error)
+	// FetchTiers retrieves a paginated list of tiers
+	FetchTiers(ctx context.Context, page int, limit int) ([]model.Tier, error)
+	// CountTiers retrieves the total number of tiers
+	CountTiers(ctx context.Context) (int64, error)
 }
 
 type tierRepo struct {
@@ -32,7 +37,7 @@ func (r *tierRepo) CreateTier(ctx context.Context, tier *model.Tier) error {
 	return nil
 }
 
-func (r *tierRepo) GetTierByID(ctx context.Context, tierId string) (*model.Tier, error) {
+func (r *tierRepo) FetchTierByID(ctx context.Context, tierId string) (*model.Tier, error) {
 	var tier model.Tier
 	err := r.resources.DB.Where("id = ?", tierId).First(&tier).Error
 	if err != nil {
@@ -42,7 +47,7 @@ func (r *tierRepo) GetTierByID(ctx context.Context, tierId string) (*model.Tier,
 	return &tier, nil
 }
 
-func (r *tierRepo) GetTiers(ctx context.Context, page int, limit int) ([]model.Tier, error) {
+func (r *tierRepo) FetchTiers(ctx context.Context, page int, limit int) ([]model.Tier, error) {
 	var tiers []model.Tier
 	err := r.resources.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&tiers).Error
 	if err != nil {
@@ -52,7 +57,7 @@ func (r *tierRepo) GetTiers(ctx context.Context, page int, limit int) ([]model.T
 	return tiers, nil
 }
 
-func (r *tierRepo) GetTotalTiers(ctx context.Context) (int64, error) {
+func (r *tierRepo) CountTiers(ctx context.Context) (int64, error) {
 	var total int64
 	err := r.resources.DB.Model(&model.Tier{}).Count(&total).Error
 	if err != nil {

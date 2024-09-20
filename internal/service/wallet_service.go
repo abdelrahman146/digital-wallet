@@ -137,7 +137,7 @@ func (s *walletService) DeleteWallet(ctx context.Context, walletId string) error
 	wallet.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	wallet.SetRemarks("Wallet deleted")
 	wallet.SetOldRecord(*wallet)
-	return s.repos.Wallet.RemoveWallet(ctx, wallet)
+	return s.repos.Wallet.DeleteWallet(ctx, wallet)
 }
 
 func (s *walletService) GetAccountsSum(ctx context.Context, walletId string) (uint64, error) {

@@ -11,10 +11,12 @@ import (
 type UserRepo interface {
 	// CreateUser Creates a new user
 	CreateUser(ctx context.Context, user *model.User) error
-	// FetchUserByID Retrieves a user by user ID
-	FetchUserByID(ctx context.Context, userId string) (*model.User, error)
 	// UpdateUserTier Sets the user's tier by user ID and tier ID
 	UpdateUserTier(ctx context.Context, userId string, tierId string) error
+	// DeleteUser Deletes a user by user ID
+	DeleteUser(ctx context.Context, user *model.User) error
+	// FetchUserByID Retrieves a user by user ID
+	FetchUserByID(ctx context.Context, userId string) (*model.User, error)
 	// FetchUsersByTierID Retrieves users by their tier ID with pagination
 	FetchUsersByTierID(ctx context.Context, tierId string, page int, limit int) ([]model.User, error)
 	// CountUsersByTierID Retrieves the total number of users in a given tier
@@ -23,8 +25,6 @@ type UserRepo interface {
 	FetchUsers(ctx context.Context, page int, limit int) ([]model.User, error)
 	// CountTotalUsers Retrieves the total number of users
 	CountTotalUsers(ctx context.Context) (int64, error)
-	// RemoveUser Deletes a user by user ID
-	RemoveUser(ctx context.Context, user *model.User) error
 }
 
 type userRepo struct {
@@ -109,8 +109,8 @@ func (r *userRepo) CountTotalUsers(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-// RemoveUser deletes a user by user ID
-func (r *userRepo) RemoveUser(ctx context.Context, user *model.User) error {
+// DeleteUser deletes a user by user ID
+func (r *userRepo) DeleteUser(ctx context.Context, user *model.User) error {
 	if err := r.resources.DB.Delete(user).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete user", logger.Field("error", err), logger.Field("user", user))
 		return err

@@ -108,5 +108,5 @@ func (s *userService) DeleteUser(ctx context.Context, userId string) error {
 	user.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	user.SetRemarks("User deleted")
 	user.SetOldRecord(*user)
-	return s.repos.User.RemoveUser(ctx, user)
+	return s.repos.User.DeleteUser(ctx, user)
 }

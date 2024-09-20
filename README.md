@@ -102,7 +102,7 @@ should 0.
 - [x] Users & Accounts
 - [x] Transactions / Exchange / Points Expiry
 - [x] Audit and Integrity Check
-- [ ] Triggers
+- [x] Triggers
 - [ ] Programs
 - [ ] User API
 - [ ] Tests

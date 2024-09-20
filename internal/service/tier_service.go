@@ -46,7 +46,7 @@ func (s *tierService) CreateTier(ctx context.Context, req *CreateTierRequest) (*
 }
 
 func (s *tierService) GetTierByID(ctx context.Context, tierId string) (*model.Tier, error) {
-	tier, err := s.repos.Tier.GetTierByID(ctx, tierId)
+	tier, err := s.repos.Tier.FetchTierByID(ctx, tierId)
 	if err != nil {
 		return nil, err
 	}
@@ -54,11 +54,11 @@ func (s *tierService) GetTierByID(ctx context.Context, tierId string) (*model.Ti
 }
 
 func (s *tierService) GetTiers(ctx context.Context, page int, limit int) (*api.List[model.Tier], error) {
-	tiers, err := s.repos.Tier.GetTiers(ctx, page, limit)
+	tiers, err := s.repos.Tier.FetchTiers(ctx, page, limit)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.repos.Tier.GetTotalTiers(ctx)
+	total, err := s.repos.Tier.CountTiers(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *tierService) DeleteTier(ctx context.Context, tierId string) error {
 		api.GetLogger(ctx).Error("User not authorized")
 		return err
 	}
-	tier, err := s.repos.Tier.GetTierByID(ctx, tierId)
+	tier, err := s.repos.Tier.FetchTierByID(ctx, tierId)
 	if err != nil {
 		return err
 	}

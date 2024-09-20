@@ -9,12 +9,16 @@ import (
 )
 
 type ExchangeRateRepo interface {
+	// CreateExchangeRate Creates a new exchange rate
+	CreateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
+	// UpdateExchangeRate Updates an existing exchange rate
+	UpdateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
+	// DeleteExchangeRate Deletes an exchange rate by its ID
+	DeleteExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
 	// FetchExchangeRateByID Retrieves an exchange rate by its ID
 	FetchExchangeRateByID(ctx context.Context, exchangeRateId string) (*model.ExchangeRate, error)
 	// FetchExchangeRate Retrieves an exchange rate by the source and destination wallet IDs, with an optional tier ID
 	FetchExchangeRate(ctx context.Context, fromWalletId, toWalletId string, tierId *string) (*model.ExchangeRate, error)
-	// CreateExchangeRate Creates a new exchange rate
-	CreateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
 	// FetchExchangeRates Retrieves a paginated list of exchange rates
 	FetchExchangeRates(ctx context.Context, page int, limit int) ([]model.ExchangeRate, error)
 	// CountExchangeRates Retrieves the total number of exchange rates
@@ -23,10 +27,6 @@ type ExchangeRateRepo interface {
 	FetchWalletExchangeRates(ctx context.Context, walletId string, page int, limit int) ([]model.ExchangeRate, error)
 	// CountWalletExchangeRates Retrieves the total number of exchange rates for a specific wallet
 	CountWalletExchangeRates(ctx context.Context, walletId string) (int64, error)
-	// UpdateExchangeRate Updates an existing exchange rate
-	UpdateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
-	// RemoveExchangeRate Deletes an exchange rate by its ID
-	RemoveExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error
 }
 
 type exchangeRateRepo struct {
@@ -111,8 +111,8 @@ func (r *exchangeRateRepo) UpdateExchangeRate(ctx context.Context, exchangeRate 
 	return nil
 }
 
-// RemoveExchangeRate deletes an exchange rate
-func (r *exchangeRateRepo) RemoveExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
+// DeleteExchangeRate deletes an exchange rate
+func (r *exchangeRateRepo) DeleteExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
 	if err := r.resources.DB.Delete(exchangeRate).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
 		return err

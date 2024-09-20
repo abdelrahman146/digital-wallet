@@ -107,5 +107,5 @@ func (s *exchangeRateService) DeleteExchangeRate(ctx context.Context, exchangeRa
 	exchangeRate.SetActor(api.GetActor(ctx), api.GetActorID(ctx))
 	exchangeRate.SetRemarks("Exchange rate deleted")
 	exchangeRate.SetOldRecord(exchangeRate)
-	return s.repos.ExchangeRate.RemoveExchangeRate(ctx, exchangeRate)
+	return s.repos.ExchangeRate.DeleteExchangeRate(ctx, exchangeRate)
 }

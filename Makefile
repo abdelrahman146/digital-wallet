@@ -9,7 +9,7 @@ dev:
 
 build:
 	@echo "building digital wallet engine..."
-	@go build -o bin/digital-wallet cmd/main.go
+	@go build -o bin/digital-wallet main.go
 	@echo "build completed"
 
 run:

@@ -11,16 +11,16 @@ import (
 type WalletRepo interface {
 	// CreateWallet Creates a new wallet
 	CreateWallet(ctx context.Context, wallet *model.Wallet) error
-	// FetchWalletByID Retrieves a wallet by its wallet ID
-	FetchWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
 	// UpdateWallet Updates an existing wallet
 	UpdateWallet(ctx context.Context, wallet *model.Wallet) error
+	// DeleteWallet Deletes a wallet by its wallet ID
+	DeleteWallet(ctx context.Context, wallet *model.Wallet) error
+	// FetchWalletByID Retrieves a wallet by its wallet ID
+	FetchWalletByID(ctx context.Context, walletId string) (*model.Wallet, error)
 	// FetchWallets Retrieves a paginated list of wallets
 	FetchWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error)
 	// CountTotalWallets Retrieves the total number of wallets
 	CountTotalWallets(ctx context.Context) (int64, error)
-	// RemoveWallet Deletes a wallet by its wallet ID
-	RemoveWallet(ctx context.Context, wallet *model.Wallet) error
 }
 
 type walletRepo struct {
@@ -84,8 +84,8 @@ func (r *walletRepo) CountTotalWallets(ctx context.Context) (int64, error) {
 	return total, nil
 }
 
-// RemoveWallet deletes a wallet from the database by its wallet ID
-func (r *walletRepo) RemoveWallet(ctx context.Context, wallet *model.Wallet) error {
+// DeleteWallet deletes a wallet from the database by its wallet ID
+func (r *walletRepo) DeleteWallet(ctx context.Context, wallet *model.Wallet) error {
 	if err := r.resources.DB.Delete(wallet).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
