@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
-	"gorm.io/gorm"
 )
 
 type WalletRepo interface {
@@ -24,18 +24,18 @@ type WalletRepo interface {
 }
 
 type walletRepo struct {
-	db *gorm.DB
+	resources *resource.Resources
 }
 
 // NewWalletRepo initializes the wallet repository
-func NewWalletRepo(db *gorm.DB) WalletRepo {
-	return &walletRepo{db: db}
+func NewWalletRepo(resources *resource.Resources) WalletRepo {
+	return &walletRepo{resources: resources}
 }
 
 // CreateWallet creates a new wallet and its associated schema
 func (r *walletRepo) CreateWallet(ctx context.Context, wallet *model.Wallet) error {
 	// Create the wallet in the database
-	if err := r.db.Create(wallet).Error; err != nil {
+	if err := r.resources.DB.Create(wallet).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to create wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
@@ -45,7 +45,7 @@ func (r *walletRepo) CreateWallet(ctx context.Context, wallet *model.Wallet) err
 // FetchWalletByID retrieves a wallet by its wallet ID
 func (r *walletRepo) FetchWalletByID(ctx context.Context, walletId string) (*model.Wallet, error) {
 	var wallet model.Wallet
-	err := r.db.Where("id = ?", walletId).First(&wallet).Error
+	err := r.resources.DB.Where("id = ?", walletId).First(&wallet).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to fetch wallet by ID", logger.Field("error", err), logger.Field("walletId", walletId))
 		return nil, err
@@ -55,7 +55,7 @@ func (r *walletRepo) FetchWalletByID(ctx context.Context, walletId string) (*mod
 
 // UpdateWallet updates an existing wallet in the database
 func (r *walletRepo) UpdateWallet(ctx context.Context, wallet *model.Wallet) error {
-	if err := r.db.Save(wallet).Error; err != nil {
+	if err := r.resources.DB.Save(wallet).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to update wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}
@@ -65,7 +65,7 @@ func (r *walletRepo) UpdateWallet(ctx context.Context, wallet *model.Wallet) err
 // FetchWallets retrieves a paginated list of wallets from the database
 func (r *walletRepo) FetchWallets(ctx context.Context, page int, limit int) ([]model.Wallet, error) {
 	var wallets []model.Wallet
-	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
+	err := r.resources.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&wallets).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to fetch wallets", logger.Field("error", err))
 		return nil, err
@@ -76,7 +76,7 @@ func (r *walletRepo) FetchWallets(ctx context.Context, page int, limit int) ([]m
 // CountTotalWallets retrieves the total number of wallets in the database
 func (r *walletRepo) CountTotalWallets(ctx context.Context) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Wallet{}).Count(&total).Error
+	err := r.resources.DB.Model(&model.Wallet{}).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to count total wallets", logger.Field("error", err))
 		return 0, err
@@ -86,7 +86,7 @@ func (r *walletRepo) CountTotalWallets(ctx context.Context) (int64, error) {
 
 // RemoveWallet deletes a wallet from the database by its wallet ID
 func (r *walletRepo) RemoveWallet(ctx context.Context, wallet *model.Wallet) error {
-	if err := r.db.Delete(wallet).Error; err != nil {
+	if err := r.resources.DB.Delete(wallet).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete wallet", logger.Field("error", err), logger.Field("wallet", wallet))
 		return err
 	}

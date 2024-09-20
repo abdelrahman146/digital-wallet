@@ -61,7 +61,7 @@ CREATE INDEX IF NOT EXISTS audit_actor_id_idx ON audit (actor_id);
 
 CREATE TABLE IF NOT EXISTS wallets
 (
-    id                  TEXT PRIMARY KEY CHECK (id ~ '^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$'),
+    id                  TEXT PRIMARY KEY CHECK (id ~ '^[a-z]+(?:[-_][a-z]+)*$'),
     name                TEXT UNIQUE NOT NULL,
     description         TEXT,
     currency            TEXT        NOT NULL CHECK ( currency ~ '^[a-zA-Z]+$'),
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS accounts
 
 CREATE TABLE IF NOT EXISTS transactions
 (
-    id               TEXT PRIMARY KEY DEFAULT generate_transaction_id(),
+    id               TEXT DEFAULT generate_transaction_id(),
     type             TEXT                                            NOT NULL,
     wallet_id        TEXT REFERENCES wallets (id) ON DELETE CASCADE  NOT NULL,
     account_id       TEXT REFERENCES accounts (id) ON DELETE CASCADE NOT NULL,
@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS transactions
     expire_at        TIMESTAMP,
     version          BIGINT           DEFAULT 0                      NOT NULL CHECK (version >= 0),
     created_at       TIMESTAMP        DEFAULT NOW()                  NOT NULL,
+    PRIMARY KEY (id, wallet_id),
     CONSTRAINT check_transaction_type CHECK (type IN ('CREDIT', 'DEBIT')),
     CONSTRAINT check_transaction_reason CHECK (reason IN
                                                ('REWARD', 'PURCHASE', 'REDEEM', 'PENALTY', 'EXPIRED', 'EXCHANGE',
@@ -169,7 +170,7 @@ CREATE TABLE IF NOT EXISTS transactions
     CONSTRAINT check_transaction_integrity CHECK (reason IN ('REWARD', 'DEPOSIT') AND type = 'CREDIT' OR
                                                   reason IN ('PURCHASE', 'REDEEM', 'PENALTY', 'EXPIRED',
                                                              'WITHDRAWAL') AND type = 'DEBIT')
-) PARTITION BY HASH (id);
+) PARTITION BY HASH (wallet_id);
 
 CREATE TABLE IF NOT EXISTS transactions_part_1 PARTITION OF transactions
     FOR VALUES WITH (MODULUS 5, REMAINDER 0);
