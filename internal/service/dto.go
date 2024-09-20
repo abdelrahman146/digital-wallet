@@ -6,6 +6,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type CreateProgramRequest struct {
+	Name        string      `json:"name,omitempty" validate:"required,min=1,max=100"`
+	WalletID    string      `json:"walletId,omitempty" validate:"required"`
+	TriggerSlug string      `json:"triggerSlug,omitempty" validate:"required"`
+	Condition   types.JSONB `json:"condition,omitempty" validate:"required,json"`
+	Effect      types.JSONB `json:"effect,omitempty" validate:"required,json"`
+}
+
 type CreateTriggerRequest struct {
 	Name       string                 `json:"name,omitempty" validate:"required,min=1,max=100"`
 	Slug       string                 `json:"slug,omitempty" validate:"required,slug"`
