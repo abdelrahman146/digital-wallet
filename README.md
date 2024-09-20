@@ -52,6 +52,11 @@ cp .env.example .env
 Make sure you have a running PostgreSQL server and update the `.env` file with your database credentials
 Run the migrations
 
+install the migrate tool
+```
+curl -L https://github.com/golang-migrate/migrate/releases/download/$version/migrate.$os-$arch.tar.gz | tar xvz
+```
+
 ```
 make migrate-up
 ```

@@ -40,6 +40,8 @@ definitions:
         type: boolean
       updatedAt:
         type: string
+      user:
+        $ref: '#/definitions/model.User'
       userId:
         type: string
       version:
@@ -125,6 +127,21 @@ definitions:
       walletId:
         type: string
     type: object
+  model.Trigger:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      properties:
+        $ref: '#/definitions/types.JSONB'
+      slug:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   model.User:
     properties:
       accounts:
@@ -188,6 +205,22 @@ definitions:
     - fromWalletId
     - toWalletId
     type: object
+  service.CreateTriggerRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      properties:
+        additionalProperties: true
+        type: object
+      slug:
+        type: string
+    required:
+    - name
+    - properties
+    - slug
+    type: object
   service.CreateUserRequest:
     properties:
       id:
@@ -233,6 +266,18 @@ definitions:
         $ref: '#/definitions/model.Transaction'
       toTransaction:
         $ref: '#/definitions/model.Transaction'
+    type: object
+  service.UpdateTriggerRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      properties:
+        additionalProperties: true
+        type: object
+      slug:
+        type: string
     type: object
   service.UpdateWalletRequest:
     properties:
@@ -563,6 +608,118 @@ paths:
       summary: Get all exchange rates of a wallet
       tags:
       - Exchange Rate
+  /backoffice/triggers:
+    post:
+      consumes:
+      - application/json
+      description: Create a trigger based on the provided request
+      parameters:
+      - description: Create Trigger Request
+        in: body
+        name: trigger
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateTriggerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Trigger'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new trigger
+      tags:
+      - Trigger
+  /backoffice/triggers/{triggerId}:
+    delete:
+      description: Delete a trigger based on the provided request
+      parameters:
+      - description: Trigger ID
+        in: path
+        name: triggerId
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/api.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a trigger
+      tags:
+      - Trigger
+    get:
+      description: Get a trigger by its ID
+      parameters:
+      - description: Trigger ID
+        in: path
+        name: triggerId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Trigger'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a trigger by its ID
+      tags:
+      - Trigger
+    put:
+      consumes:
+      - application/json
+      description: Update a trigger based on the provided request
+      parameters:
+      - description: Trigger ID
+        in: path
+        name: triggerId
+        required: true
+        type: string
+      - description: Update Trigger Request
+        in: body
+        name: trigger
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateTriggerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Trigger'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a trigger
+      tags:
+      - Trigger
   /backoffice/users:
     get:
       description: Get a list of users

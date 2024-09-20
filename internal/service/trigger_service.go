@@ -12,9 +12,9 @@ import (
 
 type TriggerService interface {
 	CreateTrigger(ctx context.Context, req CreateTriggerRequest) (*model.Trigger, error)
-	UpdateTrigger(ctx context.Context, triggerID uint64, req UpdateTriggerRequest) (*model.Trigger, error)
-	DeleteTrigger(ctx context.Context, triggerID uint64) error
-	GetTrigger(ctx context.Context, triggerID uint64) (*model.Trigger, error)
+	UpdateTrigger(ctx context.Context, triggerId uint64, req UpdateTriggerRequest) (*model.Trigger, error)
+	DeleteTrigger(ctx context.Context, triggerId uint64) error
+	GetTrigger(ctx context.Context, triggerId uint64) (*model.Trigger, error)
 	ListTriggers(ctx context.Context, page, limit int) (*api.List[model.Trigger], error)
 }
 
@@ -49,12 +49,12 @@ func (s *triggerService) CreateTrigger(ctx context.Context, req CreateTriggerReq
 	return trigger, nil
 }
 
-func (s *triggerService) UpdateTrigger(ctx context.Context, triggerID uint64, req UpdateTriggerRequest) (*model.Trigger, error) {
+func (s *triggerService) UpdateTrigger(ctx context.Context, triggerId uint64, req UpdateTriggerRequest) (*model.Trigger, error) {
 	if err := api.IsAdmin(ctx); err != nil {
 		api.GetLogger(ctx).Error("Unauthorized access", logger.Field("error", err))
 		return nil, err
 	}
-	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerID)
+	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerId)
 	if trigger == nil {
 		return nil, errs.NewNotFoundError("Trigger not found", "TRIGGER_NOT_FOUND", err)
 	}
@@ -76,12 +76,12 @@ func (s *triggerService) UpdateTrigger(ctx context.Context, triggerID uint64, re
 	return trigger, nil
 }
 
-func (s *triggerService) DeleteTrigger(ctx context.Context, triggerID uint64) error {
+func (s *triggerService) DeleteTrigger(ctx context.Context, triggerId uint64) error {
 	if err := api.IsAdmin(ctx); err != nil {
 		api.GetLogger(ctx).Error("Unauthorized access", logger.Field("error", err))
 		return err
 	}
-	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerID)
+	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerId)
 	if trigger == nil {
 		return errs.NewNotFoundError("Trigger not found", "TRIGGER_NOT_FOUND", err)
 	}
@@ -91,12 +91,12 @@ func (s *triggerService) DeleteTrigger(ctx context.Context, triggerID uint64) er
 	return nil
 }
 
-func (s *triggerService) GetTrigger(ctx context.Context, triggerID uint64) (*model.Trigger, error) {
+func (s *triggerService) GetTrigger(ctx context.Context, triggerId uint64) (*model.Trigger, error) {
 	if err := api.IsAdmin(ctx); err != nil {
 		api.GetLogger(ctx).Error("Unauthorized access", logger.Field("error", err))
 		return nil, err
 	}
-	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerID)
+	trigger, err := s.repos.Trigger.FetchTriggerByID(ctx, triggerId)
 	if trigger == nil {
 		return nil, errs.NewNotFoundError("Trigger not found", "TRIGGER_NOT_FOUND", err)
 	}

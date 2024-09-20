@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"github.com/IBM/sarama"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
 	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
+	"gorm.io/gorm"
 )
 
 type TriggerRepo interface {
@@ -36,15 +38,29 @@ func NewTriggerRepo(resources *resource.Resources) TriggerRepo {
 
 // CreateTrigger creates a new trigger in the database
 func (r *triggerRepo) CreateTrigger(ctx context.Context, trigger *model.Trigger) error {
-	if err := r.resources.DB.Create(trigger).Error; err != nil {
+	if err := r.resources.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(trigger).Error; err != nil {
+			return err
+		}
+		topicDetail := sarama.TopicDetail{
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		}
+		if err := r.resources.Broker.CreateTopic(ctx, trigger.Slug, topicDetail); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		api.GetLogger(ctx).Error("Failed to create trigger", logger.Field("error", err), logger.Field("trigger", trigger))
 		return err
 	}
+
 	return nil
 }
 
 // UpdateTrigger updates an existing trigger in the database
 func (r *triggerRepo) UpdateTrigger(ctx context.Context, trigger *model.Trigger) error {
+	// TODO: if slug is changed then update the topic name in broker
 	if err := r.resources.DB.Save(trigger).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to update trigger", logger.Field("error", err), logger.Field("trigger", trigger))
 		return err
@@ -54,7 +70,15 @@ func (r *triggerRepo) UpdateTrigger(ctx context.Context, trigger *model.Trigger)
 
 // DeleteTrigger deletes a trigger from the database
 func (r *triggerRepo) DeleteTrigger(ctx context.Context, trigger *model.Trigger) error {
-	if err := r.resources.DB.Delete(trigger).Error; err != nil {
+	if err := r.resources.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(trigger).Error; err != nil {
+			return err
+		}
+		if err := r.resources.Broker.DeleteTopic(ctx, trigger.Slug); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		api.GetLogger(ctx).Error("Failed to delete trigger", logger.Field("error", err), logger.Field("trigger", trigger))
 		return err
 	}

@@ -17,4 +17,5 @@ func New(app *fiber.App, services *service.Services) {
 	NewUserHandler(group, services)
 	NewWalletHandler(group, services)
 	NewTransactionHandler(group, services)
+	NewTriggerHandler(group, services)
 }
