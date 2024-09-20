@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
-	"gorm.io/gorm"
 )
 
 type ExchangeRateRepo interface {
@@ -30,18 +30,18 @@ type ExchangeRateRepo interface {
 }
 
 type exchangeRateRepo struct {
-	db *gorm.DB
+	resources *resource.Resources
 }
 
 // NewExchangeRateRepo initializes the exchange rate repository
-func NewExchangeRateRepo(db *gorm.DB) ExchangeRateRepo {
-	return &exchangeRateRepo{db: db}
+func NewExchangeRateRepo(resources *resource.Resources) ExchangeRateRepo {
+	return &exchangeRateRepo{resources: resources}
 }
 
 // FetchExchangeRateByID retrieves an exchange rate by its ID
 func (r *exchangeRateRepo) FetchExchangeRateByID(ctx context.Context, exchangeRateId string) (*model.ExchangeRate, error) {
 	var exchangeRate model.ExchangeRate
-	err := r.db.Where("id = ?", exchangeRateId).First(&exchangeRate).Error
+	err := r.resources.DB.Where("id = ?", exchangeRateId).First(&exchangeRate).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve exchange rate by ID", logger.Field("error", err), logger.Field("exchangeRateId", exchangeRateId))
 		return nil, err
@@ -51,7 +51,7 @@ func (r *exchangeRateRepo) FetchExchangeRateByID(ctx context.Context, exchangeRa
 
 // CreateExchangeRate creates a new exchange rate in the database
 func (r *exchangeRateRepo) CreateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
-	if err := r.db.Create(exchangeRate).Error; err != nil {
+	if err := r.resources.DB.Create(exchangeRate).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to create exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *exchangeRateRepo) CreateExchangeRate(ctx context.Context, exchangeRate 
 // FetchExchangeRates retrieves a paginated list of exchange rates
 func (r *exchangeRateRepo) FetchExchangeRates(ctx context.Context, page int, limit int) ([]model.ExchangeRate, error) {
 	var exchangeRates []model.ExchangeRate
-	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
+	err := r.resources.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve exchange rates", logger.Field("error", err))
 		return nil, err
@@ -72,7 +72,7 @@ func (r *exchangeRateRepo) FetchExchangeRates(ctx context.Context, page int, lim
 // CountExchangeRates retrieves the total number of exchange rates
 func (r *exchangeRateRepo) CountExchangeRates(ctx context.Context) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.ExchangeRate{}).Count(&total).Error
+	err := r.resources.DB.Model(&model.ExchangeRate{}).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve total exchange rates count", logger.Field("error", err))
 		return 0, err
@@ -83,7 +83,7 @@ func (r *exchangeRateRepo) CountExchangeRates(ctx context.Context) (int64, error
 // FetchWalletExchangeRates retrieves exchange rates by wallet ID with pagination
 func (r *exchangeRateRepo) FetchWalletExchangeRates(ctx context.Context, walletId string, page int, limit int) ([]model.ExchangeRate, error) {
 	var exchangeRates []model.ExchangeRate
-	err := r.db.Where("from_wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
+	err := r.resources.DB.Where("from_wallet_id = ?", walletId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&exchangeRates).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve exchange rates by wallet ID", logger.Field("error", err), logger.Field("walletId", walletId))
 		return nil, err
@@ -94,7 +94,7 @@ func (r *exchangeRateRepo) FetchWalletExchangeRates(ctx context.Context, walletI
 // CountWalletExchangeRates retrieves the total number of exchange rates for a specific wallet
 func (r *exchangeRateRepo) CountWalletExchangeRates(ctx context.Context, walletId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.ExchangeRate{}).Where("from_wallet_id = ?", walletId).Count(&total).Error
+	err := r.resources.DB.Model(&model.ExchangeRate{}).Where("from_wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve total exchange rates by wallet ID", logger.Field("error", err), logger.Field("walletId", walletId))
 		return 0, err
@@ -104,7 +104,7 @@ func (r *exchangeRateRepo) CountWalletExchangeRates(ctx context.Context, walletI
 
 // UpdateExchangeRate updates an existing exchange rate in the database
 func (r *exchangeRateRepo) UpdateExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
-	if err := r.db.Save(exchangeRate).Error; err != nil {
+	if err := r.resources.DB.Save(exchangeRate).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to update exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
 		return err
 	}
@@ -113,7 +113,7 @@ func (r *exchangeRateRepo) UpdateExchangeRate(ctx context.Context, exchangeRate 
 
 // RemoveExchangeRate deletes an exchange rate
 func (r *exchangeRateRepo) RemoveExchangeRate(ctx context.Context, exchangeRate *model.ExchangeRate) error {
-	if err := r.db.Delete(exchangeRate).Error; err != nil {
+	if err := r.resources.DB.Delete(exchangeRate).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete exchange rate", logger.Field("error", err), logger.Field("exchangeRate", exchangeRate))
 		return err
 	}
@@ -123,7 +123,7 @@ func (r *exchangeRateRepo) RemoveExchangeRate(ctx context.Context, exchangeRate 
 // FetchExchangeRate retrieves an exchange rate by source wallet ID, destination wallet ID, and optionally a tier ID
 func (r *exchangeRateRepo) FetchExchangeRate(ctx context.Context, fromWalletId, toWalletId string, tierId *string) (*model.ExchangeRate, error) {
 	var exchangeRate model.ExchangeRate
-	err := r.db.Where("from_wallet_id = ? AND to_wallet_id = ? AND tier_id = ?", fromWalletId, toWalletId, tierId).First(&exchangeRate).Error
+	err := r.resources.DB.Where("from_wallet_id = ? AND to_wallet_id = ? AND tier_id = ?", fromWalletId, toWalletId, tierId).First(&exchangeRate).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve exchange rate by wallet IDs and tier ID", logger.Field("error", err), logger.Field("fromWalletId", fromWalletId), logger.Field("toWalletId", toWalletId), logger.Field("tierId", tierId))
 		return nil, err

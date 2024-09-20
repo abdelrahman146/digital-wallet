@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
@@ -37,18 +38,18 @@ type TransactionRepo interface {
 }
 
 type transactionRepo struct {
-	db *gorm.DB
+	resources *resource.Resources
 }
 
 // NewTransactionRepo initializes the transaction repository
-func NewTransactionRepo(db *gorm.DB) TransactionRepo {
-	return &transactionRepo{db: db}
+func NewTransactionRepo(resources *resource.Resources) TransactionRepo {
+	return &transactionRepo{resources: resources}
 }
 
 // FetchAccountTransactions retrieves transactions by account ID with pagination
 func (r *transactionRepo) FetchAccountTransactions(ctx context.Context, accountId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("account_id = ?", accountId).Order("created_at desc").
+	err := r.resources.DB.Where("account_id = ?", accountId).Order("created_at desc").
 		Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching transactions by account ID", logger.Field("error", err), logger.Field("accountId", accountId))
@@ -60,7 +61,7 @@ func (r *transactionRepo) FetchAccountTransactions(ctx context.Context, accountI
 // CountAccountTransactions retrieves the total number of transactions by account ID
 func (r *transactionRepo) CountAccountTransactions(ctx context.Context, accountId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
+	err := r.resources.DB.Model(&model.Transaction{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching total transactions by account ID", logger.Field("error", err), logger.Field("accountId", accountId))
 		return 0, err
@@ -71,7 +72,7 @@ func (r *transactionRepo) CountAccountTransactions(ctx context.Context, accountI
 // SumAccountTransactions retrieves the sum of transaction amounts for a specific account ID
 func (r *transactionRepo) SumAccountTransactions(ctx context.Context, accountId string) (uint64, error) {
 	var sum uint64
-	err := r.db.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
+	err := r.resources.DB.Model(&model.Transaction{}).Select("COALESCE(SUM(amount), 0)").Where("account_id = ?", accountId).Scan(&sum).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching transaction sum by account ID", logger.Field("error", err), logger.Field("accountId", accountId))
 		return 0, err
@@ -82,7 +83,7 @@ func (r *transactionRepo) SumAccountTransactions(ctx context.Context, accountId 
 // SumExpiringAccountTransactions retrieves the sum of transactions that are about to expire for an account ID
 func (r *transactionRepo) SumExpiringAccountTransactions(ctx context.Context, accountId string, expireInterval types.Interval) (uint64, error) {
 	var sum uint64
-	err := r.db.Model(&model.Transaction{}).
+	err := r.resources.DB.Model(&model.Transaction{}).
 		Select("COALESCE(SUM(amount), 0)").
 		Where("account_id = ? AND expire_at < ?", accountId, time.Now().Add(expireInterval.Duration()).Format(time.DateOnly)).
 		Scan(&sum).Error
@@ -96,7 +97,7 @@ func (r *transactionRepo) SumExpiringAccountTransactions(ctx context.Context, ac
 // FetchWalletTransactions retrieves transactions by wallet ID with pagination
 func (r *transactionRepo) FetchWalletTransactions(ctx context.Context, walletId string, page int, limit int) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("wallet_id = ?", walletId).Order("created_at desc").
+	err := r.resources.DB.Where("wallet_id = ?", walletId).Order("created_at desc").
 		Offset((page - 1) * limit).Limit(limit).Find(&transactions).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching transactions by wallet ID", logger.Field("error", err))
@@ -108,7 +109,7 @@ func (r *transactionRepo) FetchWalletTransactions(ctx context.Context, walletId 
 // CountWalletTransactions retrieves the total number of transactions by wallet ID
 func (r *transactionRepo) CountWalletTransactions(ctx context.Context, walletId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).Count(&total).Error
+	err := r.resources.DB.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching total transactions by wallet ID", logger.Field("error", err), logger.Field("walletId", walletId))
 		return 0, err
@@ -122,7 +123,7 @@ func (r *transactionRepo) SumWalletTransactions(ctx context.Context, walletId st
 		Type string
 		Sum  uint64
 	}
-	err := r.db.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).
+	err := r.resources.DB.Model(&model.Transaction{}).Where("wallet_id = ?", walletId).
 		Select("type, COALESCE(SUM(amount), 0) as sum").Group("type").Scan(&res).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching transaction sums by wallet ID", logger.Field("error", err), logger.Field("walletId", walletId))
@@ -144,7 +145,7 @@ func (r *transactionRepo) SumWalletTransactions(ctx context.Context, walletId st
 // FetchExpiredWalletTransactions retrieves expired transactions by wallet ID
 func (r *transactionRepo) FetchExpiredWalletTransactions(ctx context.Context, walletId string) ([]model.Transaction, error) {
 	var transactions []model.Transaction
-	err := r.db.Where("wallet_id = ? AND expire_at < ? AND available_amount > 0", walletId, time.Now().Format(time.DateOnly)).Find(&transactions).Error
+	err := r.resources.DB.Where("wallet_id = ? AND expire_at < ? AND available_amount > 0", walletId, time.Now().Format(time.DateOnly)).Find(&transactions).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Error fetching expired transactions", logger.Field("error", err))
 		return nil, err
@@ -154,7 +155,7 @@ func (r *transactionRepo) FetchExpiredWalletTransactions(ctx context.Context, wa
 
 // CreateTransaction creates a new transaction for the specified account
 func (r *transactionRepo) CreateTransaction(ctx context.Context, transaction *model.Transaction, accountVersion uint64) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
+	return r.resources.DB.Transaction(func(tx *gorm.DB) error {
 		account, err := r.lockAndFetchAccount(ctx, tx, transaction.AccountID, accountVersion)
 		if err != nil {
 			return err
@@ -165,7 +166,7 @@ func (r *transactionRepo) CreateTransaction(ctx context.Context, transaction *mo
 
 // PerformExchange performs a transaction exchange between two accounts
 func (r *transactionRepo) PerformExchange(ctx context.Context, from *ExchangeRequest, to *ExchangeRequest) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
+	return r.resources.DB.Transaction(func(tx *gorm.DB) error {
 		fromAccount, err := r.lockAndFetchAccount(ctx, tx, from.Transaction.AccountID, from.AccountVersion)
 		if err != nil {
 			return err

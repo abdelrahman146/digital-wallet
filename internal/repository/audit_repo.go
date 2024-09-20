@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
-	"gorm.io/gorm"
 )
 
 type AuditRepo interface {
@@ -24,17 +24,17 @@ type AuditRepo interface {
 }
 
 type auditRepo struct {
-	db *gorm.DB
+	resources *resource.Resources
 }
 
-func NewAuditRepo(db *gorm.DB) AuditRepo {
-	return &auditRepo{db: db}
+func NewAuditRepo(resources *resource.Resources) AuditRepo {
+	return &auditRepo{resources: resources}
 }
 
 // FetchTableAuditLogs retrieves a paginated list of audit logs for a table
 func (r *auditRepo) FetchTableAuditLogs(ctx context.Context, tableName string, page int, limit int) ([]model.Audit, error) {
 	var audits []model.Audit
-	err := r.db.Where("table_name = ?", tableName).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
+	err := r.resources.DB.Where("table_name = ?", tableName).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to fetch table audit logs", logger.Field("error", err), logger.Field("tableName", tableName))
 		return nil, err
@@ -45,7 +45,7 @@ func (r *auditRepo) FetchTableAuditLogs(ctx context.Context, tableName string, p
 // CountTableAuditLogs retrieves the total number of audit logs for a table
 func (r *auditRepo) CountTableAuditLogs(ctx context.Context, tableName string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Audit{}).Where("table_name = ?", tableName).Count(&total).Error
+	err := r.resources.DB.Model(&model.Audit{}).Where("table_name = ?", tableName).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to count table audit logs", logger.Field("error", err), logger.Field("tableName", tableName))
 		return 0, err
@@ -56,7 +56,7 @@ func (r *auditRepo) CountTableAuditLogs(ctx context.Context, tableName string) (
 // FetchRecordAuditLogs retrieves a paginated list of audit logs for a record
 func (r *auditRepo) FetchRecordAuditLogs(ctx context.Context, tableName, recordId string, page int, limit int) ([]model.Audit, error) {
 	var audits []model.Audit
-	err := r.db.Where("table_name = ? AND record_id = ?", tableName, recordId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
+	err := r.resources.DB.Where("table_name = ? AND record_id = ?", tableName, recordId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to fetch record audit logs", logger.Field("error", err), logger.Field("tableName", tableName), logger.Field("recordId", recordId))
 		return nil, err
@@ -67,7 +67,7 @@ func (r *auditRepo) FetchRecordAuditLogs(ctx context.Context, tableName, recordI
 // CountRecordAuditLogs retrieves the total number of audit logs for a record
 func (r *auditRepo) CountRecordAuditLogs(ctx context.Context, tableName, recordId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Audit{}).Where("table_name = ? AND record_id = ?", tableName, recordId).Count(&total).Error
+	err := r.resources.DB.Model(&model.Audit{}).Where("table_name = ? AND record_id = ?", tableName, recordId).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to count record audit logs", logger.Field("error", err), logger.Field("tableName", tableName), logger.Field("recordId", recordId))
 		return 0, err
@@ -78,7 +78,7 @@ func (r *auditRepo) CountRecordAuditLogs(ctx context.Context, tableName, recordI
 // FetchActorAuditLogs retrieves a paginated list of audit logs for an actor
 func (r *auditRepo) FetchActorAuditLogs(ctx context.Context, actor, actorId string, page int, limit int) ([]model.Audit, error) {
 	var audits []model.Audit
-	err := r.db.Where("actor = ? AND actor_id = ?", actor, actorId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
+	err := r.resources.DB.Where("actor = ? AND actor_id = ?", actor, actorId).Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&audits).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to fetch actor audit logs", logger.Field("error", err), logger.Field("actorType", actor), logger.Field("actorId", actorId))
 		return nil, err
@@ -89,7 +89,7 @@ func (r *auditRepo) FetchActorAuditLogs(ctx context.Context, actor, actorId stri
 // CountActorAuditLogs retrieves the total number of audit logs for an actor
 func (r *auditRepo) CountActorAuditLogs(ctx context.Context, actor, actorId string) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Audit{}).Where("actor = ? AND actor_id = ?", actor, actorId).Count(&total).Error
+	err := r.resources.DB.Model(&model.Audit{}).Where("actor = ? AND actor_id = ?", actor, actorId).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to count actor audit logs", logger.Field("error", err), logger.Field("actorType", actor), logger.Field("actorId", actorId))
 		return 0, err

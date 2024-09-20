@@ -1,4 +1,4 @@
-package resources
+package resource
 
 import (
 	"github.com/abdelrahman146/digital-wallet/pkg/config"

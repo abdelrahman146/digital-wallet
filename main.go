@@ -4,11 +4,11 @@ import (
 	backofficev1 "github.com/abdelrahman146/digital-wallet/api/backoffice/v1"
 	_ "github.com/abdelrahman146/digital-wallet/docs"
 	"github.com/abdelrahman146/digital-wallet/internal/repository"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/internal/service"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
-	"github.com/abdelrahman146/digital-wallet/pkg/resources"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -36,10 +36,8 @@ import (
 // @host http://localhost:3401
 // @BasePath /api/v1
 func main() {
-	// Initialize the database connection
-	db := resources.InitDB()
 
-	// CreateTransaction a new Fiber app
+	// Initialize app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			status, resp := api.NewErrorResponse(err)
@@ -64,15 +62,24 @@ func main() {
 		Format: "${time}: [${ip}:${port}] [${pid}] requestId:${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
 	}))
 
+	// Initialize resources
+	db := resource.InitDB()
+	broker := resource.InitBroker("wallet")
+
+	resources := &resource.Resources{
+		DB:     db,
+		Broker: broker,
+	}
+
 	// Define repositories
 	repos := &repository.Repos{
-		Audit:        repository.NewAuditRepo(db),
-		Account:      repository.NewAccountRepo(db),
-		Transaction:  repository.NewTransactionRepo(db),
-		Wallet:       repository.NewWalletRepo(db),
-		User:         repository.NewUserRepo(db),
-		Tier:         repository.NewTierRepo(db),
-		ExchangeRate: repository.NewExchangeRateRepo(db),
+		Audit:        repository.NewAuditRepo(resources),
+		Account:      repository.NewAccountRepo(resources),
+		Transaction:  repository.NewTransactionRepo(resources),
+		Wallet:       repository.NewWalletRepo(resources),
+		User:         repository.NewUserRepo(resources),
+		Tier:         repository.NewTierRepo(resources),
+		ExchangeRate: repository.NewExchangeRateRepo(resources),
 	}
 
 	// Define services
@@ -114,6 +121,8 @@ func main() {
 	if err := app.Shutdown(); err != nil {
 		logger.GetLogger().Error("Error shutting down server", logger.Field("error", err))
 	}
-	resources.CloseDB(db)
+	resource.CloseDB(db)
 	logger.GetLogger().Info("Database connection closed")
+	broker.Close()
+	logger.GetLogger().Info("Broker connection closed")
 }

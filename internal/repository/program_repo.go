@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"github.com/abdelrahman146/digital-wallet/internal/model"
+	"github.com/abdelrahman146/digital-wallet/internal/resource"
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
-	"gorm.io/gorm"
 )
 
 type ProgramRepo interface {
@@ -32,15 +32,15 @@ type ProgramRepo interface {
 }
 
 type programRepo struct {
-	db *gorm.DB
+	resources *resource.Resources
 }
 
-func NewProgramRepo(db *gorm.DB) ProgramRepo {
-	return &programRepo{db: db}
+func NewProgramRepo(resources *resource.Resources) ProgramRepo {
+	return &programRepo{resources: resources}
 }
 
 func (r *programRepo) CreateProgram(ctx context.Context, program *model.Program) error {
-	if err := r.db.Create(program).Error; err != nil {
+	if err := r.resources.DB.Create(program).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to create program", logger.Field("error", err), logger.Field("program", program))
 		return err
 	}
@@ -48,7 +48,7 @@ func (r *programRepo) CreateProgram(ctx context.Context, program *model.Program)
 }
 
 func (r *programRepo) UpdateProgram(ctx context.Context, program *model.Program) error {
-	if err := r.db.Save(program).Error; err != nil {
+	if err := r.resources.DB.Save(program).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to update program", logger.Field("error", err), logger.Field("program", program))
 		return err
 	}
@@ -56,7 +56,7 @@ func (r *programRepo) UpdateProgram(ctx context.Context, program *model.Program)
 }
 
 func (r *programRepo) DeleteProgram(ctx context.Context, program *model.Program) error {
-	if err := r.db.Delete(program).Error; err != nil {
+	if err := r.resources.DB.Delete(program).Error; err != nil {
 		api.GetLogger(ctx).Error("Failed to delete program", logger.Field("error", err), logger.Field("program", program))
 		return err
 	}
@@ -65,7 +65,7 @@ func (r *programRepo) DeleteProgram(ctx context.Context, program *model.Program)
 
 func (r *programRepo) FetchProgramByID(ctx context.Context, id uint64) (*model.Program, error) {
 	var program model.Program
-	err := r.db.Where("id = ?", id).First(&program).Error
+	err := r.resources.DB.Where("id = ?", id).First(&program).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve program by ID", logger.Field("error", err), logger.Field("id", id))
 		return nil, err
@@ -75,7 +75,7 @@ func (r *programRepo) FetchProgramByID(ctx context.Context, id uint64) (*model.P
 
 func (r *programRepo) FetchProgramsByTriggerID(ctx context.Context, triggerID uint64) ([]*model.Program, error) {
 	var programs []*model.Program
-	err := r.db.Where("trigger_id = ?", triggerID).Find(&programs).Error
+	err := r.resources.DB.Where("trigger_id = ?", triggerID).Find(&programs).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve programs by trigger ID", logger.Field("error", err), logger.Field("triggerId", triggerID))
 		return nil, err
@@ -85,7 +85,7 @@ func (r *programRepo) FetchProgramsByTriggerID(ctx context.Context, triggerID ui
 
 func (r *programRepo) CountProgramsByTriggerID(ctx context.Context, triggerID uint64) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Program{}).Where("trigger_id = ?", triggerID).Count(&total).Error
+	err := r.resources.DB.Model(&model.Program{}).Where("trigger_id = ?", triggerID).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve total programs count by trigger ID", logger.Field("error", err), logger.Field("triggerId", triggerID))
 		return 0, err
@@ -95,7 +95,7 @@ func (r *programRepo) CountProgramsByTriggerID(ctx context.Context, triggerID ui
 
 func (r *programRepo) FetchProgramsByWalletID(ctx context.Context, walletID uint64) ([]*model.Program, error) {
 	var programs []*model.Program
-	err := r.db.Where("wallet_id = ?", walletID).Find(&programs).Error
+	err := r.resources.DB.Where("wallet_id = ?", walletID).Find(&programs).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve programs by wallet ID", logger.Field("error", err), logger.Field("walletId", walletID))
 		return nil, err
@@ -105,7 +105,7 @@ func (r *programRepo) FetchProgramsByWalletID(ctx context.Context, walletID uint
 
 func (r *programRepo) CountProgramsByWalletID(ctx context.Context, walletID uint64) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Program{}).Where("wallet_id = ?", walletID).Count(&total).Error
+	err := r.resources.DB.Model(&model.Program{}).Where("wallet_id = ?", walletID).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve total programs count by wallet ID", logger.Field("error", err), logger.Field("walletId", walletID))
 		return 0, err
@@ -115,7 +115,7 @@ func (r *programRepo) CountProgramsByWalletID(ctx context.Context, walletID uint
 
 func (r *programRepo) FetchPrograms(ctx context.Context, page int, limit int) ([]*model.Program, error) {
 	var programs []*model.Program
-	err := r.db.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&programs).Error
+	err := r.resources.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&programs).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve programs", logger.Field("error", err))
 		return nil, err
@@ -125,7 +125,7 @@ func (r *programRepo) FetchPrograms(ctx context.Context, page int, limit int) ([
 
 func (r *programRepo) CountPrograms(ctx context.Context) (int64, error) {
 	var total int64
-	err := r.db.Model(&model.Program{}).Count(&total).Error
+	err := r.resources.DB.Model(&model.Program{}).Count(&total).Error
 	if err != nil {
 		api.GetLogger(ctx).Error("Failed to retrieve total programs count", logger.Field("error", err))
 		return 0, err

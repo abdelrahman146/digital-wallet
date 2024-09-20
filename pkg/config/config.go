@@ -6,13 +6,14 @@ import (
 )
 
 type Config struct {
-	DbHost     string
-	DbPort     string
-	DbUser     string
-	DbPassword string
-	DbName     string
-	DbSSLMode  string
-	DebugLevel string
+	DbHost       string
+	DbPort       string
+	DbUser       string
+	DbPassword   string
+	DbName       string
+	DbSSLMode    string
+	DebugLevel   string
+	KafkaBrokers string
 }
 
 var config *Config
@@ -26,13 +27,14 @@ func GetConfig() *Config {
 
 func loadConfig() *Config {
 	return &Config{
-		DbHost:     GetEnv("DB_HOST", "localhost"),
-		DbPort:     GetEnv("DB_PORT", "5432"),
-		DbUser:     GetEnv("DB_USER", "postgres"),
-		DbPassword: GetEnv("DB_PASSWORD", "password"),
-		DbName:     GetEnv("DB_NAME", "digital_wallet"),
-		DbSSLMode:  GetEnv("DB_SSLMODE", "disable"),
-		DebugLevel: GetEnv("DEBUG_LEVEL", "info"),
+		DbHost:       GetEnv("DB_HOST", "localhost"),
+		DbPort:       GetEnv("DB_PORT", "5432"),
+		DbUser:       GetEnv("DB_USER", "postgres"),
+		DbPassword:   GetEnv("DB_PASSWORD", "password"),
+		DbName:       GetEnv("DB_NAME", "digital_wallet"),
+		DbSSLMode:    GetEnv("DB_SSLMODE", "disable"),
+		DebugLevel:   GetEnv("DEBUG_LEVEL", "info"),
+		KafkaBrokers: GetEnv("KAFKA_BROKERS", "localhost:9092"),
 	}
 }
 
