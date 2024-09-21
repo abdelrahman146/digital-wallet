@@ -463,6 +463,233 @@ const docTemplate = `{
                 }
             }
         },
+        "/backoffice/programs": {
+            "get": {
+                "description": "Get a list of programs based on the provided request",
+                "tags": [
+                    "Program"
+                ],
+                "summary": "Get a list of programs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/api.List-model_Program"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a program based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Program"
+                ],
+                "summary": "Create a new program",
+                "parameters": [
+                    {
+                        "description": "Create Program Request",
+                        "name": "program",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateProgramRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Program"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/backoffice/programs/{programId}": {
+            "get": {
+                "description": "Get a program based on the provided request",
+                "tags": [
+                    "Program"
+                ],
+                "summary": "Get a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program ID",
+                        "name": "programId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Program"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a program based on the provided request",
+                "tags": [
+                    "Program"
+                ],
+                "summary": "Delete a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program ID",
+                        "name": "programId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update a program based on the provided request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Program"
+                ],
+                "summary": "Update a program",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program ID",
+                        "name": "programId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Program Request",
+                        "name": "program",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateProgramRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "result": {
+                                            "$ref": "#/definitions/model.Program"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/backoffice/triggers": {
             "post": {
                 "description": "Create a trigger based on the provided request",
@@ -1770,6 +1997,26 @@ const docTemplate = `{
                 }
             }
         },
+        "api.List-model_Program": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Program"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.SuccessResponse": {
             "type": "object",
             "properties": {
@@ -1882,6 +2129,50 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Program": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "effect": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isActive;default:false": {
+                    "type": "boolean"
+                },
+                "limitGlobal": {
+                    "type": "integer"
+                },
+                "limitPerUser": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "triggerSlug": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "validFrom": {
+                    "type": "string"
+                },
+                "validUntil": {
+                    "type": "string"
+                },
+                "walletId": {
                     "type": "string"
                 }
             }
@@ -2053,6 +2344,48 @@ const docTemplate = `{
                 }
             }
         },
+        "service.CreateProgramRequest": {
+            "type": "object",
+            "required": [
+                "condition",
+                "effect",
+                "name",
+                "triggerSlug",
+                "validFrom",
+                "walletId"
+            ],
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "effect": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "limitPerUser": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "triggerSlug": {
+                    "type": "string"
+                },
+                "validFrom": {
+                    "type": "string"
+                },
+                "validUntil": {
+                    "type": "string"
+                },
+                "walletId": {
+                    "type": "string"
+                }
+            }
+        },
         "service.CreateTriggerRequest": {
             "type": "object",
             "required": [
@@ -2138,6 +2471,40 @@ const docTemplate = `{
                 },
                 "toTransaction": {
                     "$ref": "#/definitions/model.Transaction"
+                }
+            }
+        },
+        "service.UpdateProgramRequest": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "effect": {
+                    "$ref": "#/definitions/types.JSONB"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "limitPerUser": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "triggerSlug": {
+                    "type": "string"
+                },
+                "validFrom": {
+                    "type": "string"
+                },
+                "validUntil": {
+                    "type": "string"
+                },
+                "walletId": {
+                    "type": "string"
                 }
             }
         },

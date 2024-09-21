@@ -22,6 +22,19 @@ definitions:
       reason:
         type: string
     type: object
+  api.List-model_Program:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Program'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
   api.SuccessResponse:
     properties:
       result: {}
@@ -94,6 +107,35 @@ definitions:
       toWalletId:
         type: string
       updatedAt:
+        type: string
+    type: object
+  model.Program:
+    properties:
+      condition:
+        $ref: '#/definitions/types.JSONB'
+      createdAt:
+        type: string
+      effect:
+        $ref: '#/definitions/types.JSONB'
+      id:
+        type: integer
+      isActive;default:false:
+        type: boolean
+      limitGlobal:
+        type: integer
+      limitPerUser:
+        type: integer
+      name:
+        type: string
+      triggerSlug:
+        type: string
+      updatedAt:
+        type: string
+      validFrom:
+        type: string
+      validUntil:
+        type: string
+      walletId:
         type: string
     type: object
   model.Transaction:
@@ -205,6 +247,36 @@ definitions:
     - fromWalletId
     - toWalletId
     type: object
+  service.CreateProgramRequest:
+    properties:
+      condition:
+        $ref: '#/definitions/types.JSONB'
+      effect:
+        $ref: '#/definitions/types.JSONB'
+      isActive:
+        type: boolean
+      limitPerUser:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      triggerSlug:
+        type: string
+      validFrom:
+        type: string
+      validUntil:
+        type: string
+      walletId:
+        type: string
+    required:
+    - condition
+    - effect
+    - name
+    - triggerSlug
+    - validFrom
+    - walletId
+    type: object
   service.CreateTriggerRequest:
     properties:
       name:
@@ -266,6 +338,29 @@ definitions:
         $ref: '#/definitions/model.Transaction'
       toTransaction:
         $ref: '#/definitions/model.Transaction'
+    type: object
+  service.UpdateProgramRequest:
+    properties:
+      condition:
+        $ref: '#/definitions/types.JSONB'
+      effect:
+        $ref: '#/definitions/types.JSONB'
+      isActive:
+        type: boolean
+      limitPerUser:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      triggerSlug:
+        type: string
+      validFrom:
+        type: string
+      validUntil:
+        type: string
+      walletId:
+        type: string
     type: object
   service.UpdateTriggerRequest:
     properties:
@@ -608,6 +703,144 @@ paths:
       summary: Get all exchange rates of a wallet
       tags:
       - Exchange Rate
+  /backoffice/programs:
+    get:
+      description: Get a list of programs based on the provided request
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/api.List-model_Program'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a list of programs
+      tags:
+      - Program
+    post:
+      consumes:
+      - application/json
+      description: Create a program based on the provided request
+      parameters:
+      - description: Create Program Request
+        in: body
+        name: program
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateProgramRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Program'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new program
+      tags:
+      - Program
+  /backoffice/programs/{programId}:
+    delete:
+      description: Delete a program based on the provided request
+      parameters:
+      - description: Program ID
+        in: path
+        name: programId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a program
+      tags:
+      - Program
+    get:
+      description: Get a program based on the provided request
+      parameters:
+      - description: Program ID
+        in: path
+        name: programId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Program'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get a program
+      tags:
+      - Program
+    patch:
+      consumes:
+      - application/json
+      description: Update a program based on the provided request
+      parameters:
+      - description: Program ID
+        in: path
+        name: programId
+        required: true
+        type: string
+      - description: Update Program Request
+        in: body
+        name: program
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateProgramRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.SuccessResponse'
+            - properties:
+                result:
+                  $ref: '#/definitions/model.Program'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a program
+      tags:
+      - Program
   /backoffice/triggers:
     post:
       consumes:

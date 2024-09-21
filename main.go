@@ -80,6 +80,8 @@ func main() {
 		User:         repository.NewUserRepo(resources),
 		Tier:         repository.NewTierRepo(resources),
 		ExchangeRate: repository.NewExchangeRateRepo(resources),
+		Trigger:      repository.NewTriggerRepo(resources),
+		Program:      repository.NewProgramRepo(resources),
 	}
 
 	// Define services
@@ -91,6 +93,8 @@ func main() {
 		User:         service.NewUserService(repos),
 		Tier:         service.NewTierService(repos),
 		ExchangeRate: service.NewExchangeRateService(repos),
+		Trigger:      service.NewTriggerService(repos),
+		Program:      service.NewProgramService(repos),
 	}
 
 	// Define routes

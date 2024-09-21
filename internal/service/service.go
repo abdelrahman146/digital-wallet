@@ -9,4 +9,5 @@ type Services struct {
 	User         UserService
 	ExchangeRate ExchangeRateService
 	Trigger      TriggerService
+	Program      ProgramService
 }

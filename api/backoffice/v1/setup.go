@@ -18,4 +18,5 @@ func New(app *fiber.App, services *service.Services) {
 	NewWalletHandler(group, services)
 	NewTransactionHandler(group, services)
 	NewTriggerHandler(group, services)
+	NewProgramHandler(group, services)
 }

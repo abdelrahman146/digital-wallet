@@ -4,14 +4,31 @@ import (
 	"github.com/abdelrahman146/digital-wallet/internal/model"
 	"github.com/abdelrahman146/digital-wallet/pkg/types"
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 type CreateProgramRequest struct {
-	Name        string      `json:"name,omitempty" validate:"required,min=1,max=100"`
-	WalletID    string      `json:"walletId,omitempty" validate:"required"`
-	TriggerSlug string      `json:"triggerSlug,omitempty" validate:"required"`
-	Condition   types.JSONB `json:"condition,omitempty" validate:"required,json"`
-	Effect      types.JSONB `json:"effect,omitempty" validate:"required,json"`
+	Name         string      `json:"name,omitempty" validate:"required,min=1,max=100"`
+	WalletID     string      `json:"walletId,omitempty" validate:"required"`
+	TriggerSlug  string      `json:"triggerSlug,omitempty" validate:"required"`
+	Condition    types.JSONB `json:"condition,omitempty" validate:"required,json"`
+	Effect       types.JSONB `json:"effect,omitempty" validate:"required,json"`
+	ValidFrom    time.Time   `json:"validFrom,omitempty" validate:"required"`
+	ValidUntil   *time.Time  `json:"validUntil,omitempty"`
+	IsActive     bool        `json:"isActive,omitempty"`
+	LimitPerUser *uint64     `json:"limitPerUser,omitempty"`
+}
+
+type UpdateProgramRequest struct {
+	Name         *string      `json:"name,omitempty" validate:"omitempty,min=1,max=100"`
+	WalletID     *string      `json:"walletId,omitempty" validate:"omitempty"`
+	TriggerSlug  *string      `json:"triggerSlug,omitempty" validate:"omitempty"`
+	Condition    *types.JSONB `json:"condition,omitempty" validate:"omitempty,json"`
+	Effect       *types.JSONB `json:"effect,omitempty" validate:"omitempty,json"`
+	ValidFrom    *time.Time   `json:"validFrom,omitempty" validate:"omitempty"`
+	ValidUntil   *time.Time   `json:"validUntil,omitempty" validate:"omitempty"`
+	IsActive     *bool        `json:"isActive,omitempty"`
+	LimitPerUser *uint64      `json:"limitPerUser,omitempty"`
 }
 
 type CreateTriggerRequest struct {
