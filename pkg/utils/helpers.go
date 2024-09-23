@@ -2,7 +2,6 @@ package utils
 
 import (
 	"golang.org/x/exp/constraints"
-	"time"
 )
 
 type Nullable interface {
@@ -17,8 +16,4 @@ func Coalesce[T Nullable](options ...T) T {
 		}
 	}
 	return zero
-}
-
-func GetDateAfter(interval time.Duration) time.Time {
-	return time.Now().Add(interval)
 }
