@@ -97,3 +97,6 @@ bin/
 data/
 
 .idea/
+
+coverage.html
+coverage.out
