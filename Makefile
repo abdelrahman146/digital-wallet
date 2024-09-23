@@ -1,4 +1,4 @@
-.PONY: dev build run migrate-up migrate-down create-migration swag
+.PONY: dev build run migrate-up migrate-down create-migration swag test gen-mocks
 
 include .env
 export $(shell sed 's/=.*//' .env)
@@ -36,3 +36,15 @@ swag:
 	@echo "generating swagger docs..."
 	@swag init --pdl 3 --parseDependency --parseInternal
 	@echo "swagger docs generated"
+
+test:
+	@echo "running tests..."
+	@go test -v ./... -coverprofile=coverage.out
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "tests completed"
+
+gen-mocks:
+	@echo "generating mocks..."
+	@chmod +x ./scripts/generate-mocks.sh
+	@./scripts/generate-mocks.sh
+	@echo "mocks generated"

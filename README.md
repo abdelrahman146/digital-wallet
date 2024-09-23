@@ -106,3 +106,8 @@ should 0.
 - [ ] Programs
 - [ ] User API
 - [ ] Tests
+
+## To Generate Mocks 
+```
+go install go.uber.org/mock/mockgen@latest
+```
