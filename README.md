@@ -111,3 +111,7 @@ should 0.
 ```
 go install go.uber.org/mock/mockgen@latest
 ```
+then run the following command
+```
+make gen-mocks
+```
