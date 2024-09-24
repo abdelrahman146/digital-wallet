@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func NewRepoMock(t *testing.T) *repository.Repos {
+func NewRepoMock(t *testing.T) (*repository.Repos, *gomock.Controller) {
 	ctrl := gomock.NewController(t)
 	return &repository.Repos{
 		Audit:        NewMockAuditRepo(ctrl),
@@ -18,5 +18,9 @@ func NewRepoMock(t *testing.T) *repository.Repos {
 		ExchangeRate: NewMockExchangeRateRepo(ctrl),
 		Program:      NewMockProgramRepo(ctrl),
 		Trigger:      NewMockTriggerRepo(ctrl),
-	}
+	}, ctrl
+}
+
+func CloseRepoMock(ctrl *gomock.Controller) {
+	ctrl.Finish()
 }

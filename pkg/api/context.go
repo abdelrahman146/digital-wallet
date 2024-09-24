@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func CreateAppContext(actor string) fiber.Handler {
+func CreateAppContextMiddleware(actor string) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		requestId := ctx.Locals("requestid").(string)
 		actorId := ctx.Locals("actorId").(string)
@@ -19,6 +19,15 @@ func CreateAppContext(actor string) fiber.Handler {
 		ctx.Locals("actor", actor)
 		return ctx.Next()
 	}
+}
+
+func CreateAppContext(ctx context.Context, actor, actorId, requestId string) context.Context {
+	ctx = context.WithValue(ctx, "requestId", requestId)
+	ctx = context.WithValue(ctx, "actorId", actorId)
+	ctx = context.WithValue(ctx, "actor", actor)
+	l, _ := logger.NewZapLogger(zapcore.DebugLevel, logger.Field("requestId", requestId), logger.Field("actor", actor), logger.Field("actorId", actorId))
+	ctx = context.WithValue(ctx, "logger", l)
+	return ctx
 }
 
 func GetLogger(ctx context.Context) logger.Logger {

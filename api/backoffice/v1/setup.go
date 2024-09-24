@@ -9,7 +9,7 @@ import (
 func New(app *fiber.App, services *service.Services) {
 	group := app.Group("api/v1/backoffice/")
 	group.Use(api.AdminAuthenticationMiddleware())
-	group.Use(api.CreateAppContext(api.AppActorAdmin))
+	group.Use(api.CreateAppContextMiddleware(api.AppActorAdmin))
 	NewAuditHandler(group, services)
 	NewAccountHandler(group, services)
 	NewExchangeRateHandler(group, services)
