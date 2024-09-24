@@ -19,14 +19,15 @@ const (
 	test_requestId = "mock-123"
 )
 
-type TestCase struct {
+type TestCase[Service any] struct {
 	name          string
-	setupMocks    func(mocks *serviceMocks, ctx context.Context)
+	setupMocks    func(mocks *Mocks, ctx context.Context)
 	expectedError string
-	expectedValid bool
+	expectResult  bool
+	testFunc      func(service Service, ctx context.Context) (interface{}, error)
 }
 
-type serviceMocks struct {
+type Mocks struct {
 	auditRepo        *repository_mock.MockAuditRepo
 	accountRepo      *repository_mock.MockAccountRepo
 	transactionRepo  *repository_mock.MockTransactionRepo
@@ -39,7 +40,7 @@ type serviceMocks struct {
 	repos            *repository.Repos
 }
 
-func newServiceMocks(ctrl *gomock.Controller) *serviceMocks {
+func NewServiceMocks(ctrl *gomock.Controller) *Mocks {
 	auditRepo := repository_mock.NewMockAuditRepo(ctrl)
 	accountRepo := repository_mock.NewMockAccountRepo(ctrl)
 	transactionRepo := repository_mock.NewMockTransactionRepo(ctrl)
@@ -49,7 +50,7 @@ func newServiceMocks(ctrl *gomock.Controller) *serviceMocks {
 	exchangeRateRepo := repository_mock.NewMockExchangeRateRepo(ctrl)
 	programRepo := repository_mock.NewMockProgramRepo(ctrl)
 	triggerRepo := repository_mock.NewMockTriggerRepo(ctrl)
-	return &serviceMocks{
+	return &Mocks{
 		auditRepo:        auditRepo,
 		accountRepo:      accountRepo,
 		transactionRepo:  transactionRepo,
@@ -73,36 +74,44 @@ func newServiceMocks(ctrl *gomock.Controller) *serviceMocks {
 	}
 }
 
-func testExpectError(t *testing.T, err error, expectedCode string) {
-	if err == nil || errs.HandleError(err).Code != expectedCode {
-		t.Errorf("expected error code %v, got %v", expectedCode, err)
-	}
+func SetupTest[Service any](t *testing.T, serviceFactory func(*Mocks) Service) (*gomock.Controller, *Mocks, Service) {
+	ctrl := gomock.NewController(t)
+	mocks := NewServiceMocks(ctrl)
+	service := serviceFactory(mocks)
+	return ctrl, mocks, service
 }
 
-func runTestCases(t *testing.T, testCases []TestCase, testFunc func() (interface{}, error)) {
+func RunTestCases[Service any](t *testing.T, serviceFactory func(*Mocks) Service, testCases []TestCase[Service]) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl, mocks, accountService := setupTest(t)
+			ctrl, mocks, service := SetupTest(t, serviceFactory)
 			defer ctrl.Finish()
-			ctx := api.CreateAppContext(context.Background(), api.AppActorUser, "user123", "mock-123")
 
-			// Setup Mocks
+			// Create a basic context, you can customize per test if needed
+			ctx := api.CreateAppContext(context.Background(), api.AppActorUser, test_userId, test_requestId)
+
+			// Setup ServiceMocks for each test case
 			tc.setupMocks(mocks, ctx)
 
-			// Run test function
-			result, err := testFunc()
+			// Run the test function for each case
+			result, err := tc.testFunc(service, ctx)
 
 			// Validate error
 			if tc.expectedError != "" {
-				testExpectError(t, err, tc.expectedError)
+				TestExpectError(t, err, tc.expectedError)
 			} else if err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
 
-			// Validate result
-			if tc.expectedValid && result == nil {
-				t.Error("expected valid result, got nil")
+			if result == nil && tc.expectResult {
+				t.Errorf("expected result, got nil")
 			}
 		})
+	}
+}
+
+func TestExpectError(t *testing.T, err error, expectedCode string) {
+	if err == nil || errs.HandleError(err).Code != expectedCode {
+		t.Errorf("expected error code %v, got %v", expectedCode, err)
 	}
 }
