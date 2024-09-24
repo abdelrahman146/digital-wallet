@@ -1,4 +1,4 @@
-.PONY: dev build run migrate-up migrate-down create-migration swag test gen-mocks
+.PONY: dev build run migrate-up migrate-down create-migration swag test coverage gen-mocks
 
 include .env
 export $(shell sed 's/=.*//' .env)
@@ -39,9 +39,14 @@ swag:
 
 test:
 	@echo "running tests..."
-	@go test -v ./... -coverprofile=coverage.out
-	@go tool cover -html=coverage.out -o coverage.html
+	@go test -v ./...
 	@echo "tests completed"
+
+coverage:
+	@echo "running tests with coverage..."
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out
+	@echo "coverage completed"
 
 gen-mocks:
 	@echo "generating mocks..."

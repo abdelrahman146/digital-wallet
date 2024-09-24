@@ -7,6 +7,7 @@ import (
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 	"go.uber.org/mock/gomock"
+	"reflect"
 	"testing"
 )
 
@@ -21,6 +22,7 @@ const (
 
 type TestCase[Service any] struct {
 	name          string
+	ctx           context.Context
 	setupMocks    func(mocks *Mocks, ctx context.Context)
 	expectedError string
 	expectResult  bool
@@ -86,9 +88,13 @@ func RunTestCases[Service any](t *testing.T, serviceFactory func(*Mocks) Service
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl, mocks, service := SetupTest(t, serviceFactory)
 			defer ctrl.Finish()
-
-			// Create a basic context, you can customize per test if needed
-			ctx := api.CreateAppContext(context.Background(), api.AppActorUser, test_userId, test_requestId)
+			ctx := context.Background()
+			if tc.ctx == nil {
+				// Create a basic context, you can customize per test if needed
+				ctx = api.CreateAppContext(ctx, api.AppActorUser, test_userId, test_requestId)
+			} else {
+				ctx = tc.ctx
+			}
 
 			// Setup ServiceMocks for each test case
 			tc.setupMocks(mocks, ctx)
@@ -103,8 +109,21 @@ func RunTestCases[Service any](t *testing.T, serviceFactory func(*Mocks) Service
 				t.Errorf("expected no error, got %v", err)
 			}
 
-			if result == nil && tc.expectResult {
-				t.Errorf("expected result, got nil")
+			switch result {
+			case nil:
+				if tc.expectResult {
+					t.Errorf("expected result, got %v", result)
+				}
+			default:
+				// Validate result
+				if reflect.ValueOf(result).IsZero() && tc.expectResult {
+					t.Errorf("expected result, got %v", result)
+				}
+
+				// Validate no result
+				if !reflect.ValueOf(result).IsZero() && !tc.expectResult {
+					t.Errorf("expected no result, got %v", result)
+				}
 			}
 		})
 	}
