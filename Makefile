@@ -39,7 +39,7 @@ swag:
 
 test:
 	@echo "running tests..."
-	@go test -v ./...
+	@go test ./...
 	@echo "tests completed"
 
 coverage:
