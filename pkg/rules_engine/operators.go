@@ -17,9 +17,9 @@ func evaluateOperator(operator string, fieldValue, ruleValue interface{}) (bool,
 		}
 		return evaluateString(operator, fieldVal, ruleValue.(string))
 	case float64:
-		return evaluateNumeric(operator, fieldVal, toFloat64(ruleValue))
+		return evaluateNumeric(operator, fieldVal, utils.ToFloat64(ruleValue))
 	case int, int64, int32:
-		return evaluateNumeric(operator, float64(reflect.ValueOf(fieldValue).Int()), toFloat64(ruleValue))
+		return evaluateNumeric(operator, float64(reflect.ValueOf(fieldValue).Int()), utils.ToFloat64(ruleValue))
 	default:
 		return false, fmt.Errorf("unsupported value type for comparison: %v", fieldValue)
 	}

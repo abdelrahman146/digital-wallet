@@ -7,6 +7,7 @@ import (
 	"github.com/abdelrahman146/digital-wallet/pkg/api"
 	"github.com/abdelrahman146/digital-wallet/pkg/errs"
 	"github.com/abdelrahman146/digital-wallet/pkg/logger"
+	rule_engine "github.com/abdelrahman146/digital-wallet/pkg/rules_engine"
 )
 
 type ProgramService interface {
@@ -15,6 +16,7 @@ type ProgramService interface {
 	DeleteProgram(ctx context.Context, id uint64) error
 	GetProgram(ctx context.Context, id uint64) (*model.Program, error)
 	ListPrograms(ctx context.Context, page, limit int) (*api.List[model.Program], error)
+	InvokePrograms(ctx context.Context, triggerSlug string, userId string, triggerData map[string]interface{}) error
 }
 
 type programService struct {
@@ -135,4 +137,35 @@ func (s *programService) ListPrograms(ctx context.Context, page, limit int) (*ap
 		return nil, err
 	}
 	return &api.List[model.Program]{Items: programs, Limit: limit, Page: page, Total: count}, nil
+}
+
+func (s *programService) InvokePrograms(ctx context.Context, triggerSlug string, userId string, triggerData map[string]interface{}) error {
+	if err := api.IsAdmin(ctx); err != nil {
+		api.GetLogger(ctx).Error("Unauthorized access", logger.Field("error", err))
+		return err
+	}
+	programs, err := s.repos.Program.FetchTriggerPrograms(ctx, triggerSlug)
+	if err != nil {
+		return err
+	}
+	if len(programs) == 0 {
+		return nil
+	}
+	data := make(map[string]interface{})
+	userData := make(map[string]interface{})
+	user, err := s.repos.User.FetchUserByID(ctx, userId)
+	if user == nil {
+		return errs.NewNotFoundError("User not found", "USER_NOT_FOUND", err)
+	}
+	data["userData"] = userData
+	data["triggerData"] = triggerData
+
+	for _, program := range programs {
+		conditionMet, err := rule_engine.EvaluateRule(program.Condition, data)
+		if err != nil || !conditionMet {
+			continue
+		}
+		// TODO: apply effect
+	}
+	return nil
 }

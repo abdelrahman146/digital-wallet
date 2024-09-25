@@ -1,26 +1,17 @@
 package rule_engine
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/abdelrahman146/digital-wallet/pkg/utils"
 )
 
-func Evaluate(rule Rule, data []byte) (bool, error) {
-	var jsonObject map[string]interface{}
-	err := json.Unmarshal(data, &jsonObject)
-	if err != nil {
-		return false, fmt.Errorf("invalid JSON data: %v", err)
-	}
-	return evaluateRule(rule, jsonObject)
-}
-
-// evaluateRule recursively evaluates rules, including logical combinations (AND, OR, NOT).
-func evaluateRule(rule Rule, jsonObject map[string]interface{}) (bool, error) {
+// EvaluateRule recursively evaluates rules, including logical combinations (AND, OR, NOT).
+func EvaluateRule(rule Rule, data map[string]interface{}) (bool, error) {
 	if rule.Logic != "" {
-		return evaluateLogic(rule, jsonObject)
+		return evaluateLogic(rule, data)
 	}
 
-	fieldValue, exists := getField(jsonObject, rule.Field)
+	fieldValue, exists := utils.GetField(data, rule.Field)
 	if !exists {
 		return false, fmt.Errorf("field %s not found", rule.Field)
 	}
@@ -35,8 +26,8 @@ func evaluateRule(rule Rule, jsonObject map[string]interface{}) (bool, error) {
 }
 
 // evaluateArray applies a rule to each element in an array (supports "all" or "any").
-func evaluateArray(rule Rule, jsonArray []interface{}, matchAll bool) (bool, error) {
-	for _, element := range jsonArray {
+func evaluateArray(rule Rule, dataArray []interface{}, matchAll bool) (bool, error) {
+	for _, element := range dataArray {
 		jsonObject, ok := element.(map[string]interface{})
 		if !ok {
 			return false, fmt.Errorf("array element is not a JSON object")
@@ -44,7 +35,7 @@ func evaluateArray(rule Rule, jsonArray []interface{}, matchAll bool) (bool, err
 
 		// Iterate through all sub-rules and evaluate them for each array element
 		for _, subRule := range rule.Rules {
-			result, err := evaluateRule(subRule, jsonObject)
+			result, err := EvaluateRule(subRule, jsonObject)
 			if err != nil {
 				return false, err
 			}
@@ -67,11 +58,11 @@ func evaluateArray(rule Rule, jsonArray []interface{}, matchAll bool) (bool, err
 }
 
 // evaluateLogic handles AND, OR, and NOT operations between rules.
-func evaluateLogic(rule Rule, jsonObject map[string]interface{}) (bool, error) {
+func evaluateLogic(rule Rule, data map[string]interface{}) (bool, error) {
 	switch rule.Logic {
 	case "AND":
 		for _, subRule := range rule.Rules {
-			result, err := evaluateRule(subRule, jsonObject)
+			result, err := EvaluateRule(subRule, data)
 			if err != nil || !result {
 				return false, err
 			}
@@ -79,7 +70,7 @@ func evaluateLogic(rule Rule, jsonObject map[string]interface{}) (bool, error) {
 		return true, nil
 	case "OR":
 		for _, subRule := range rule.Rules {
-			result, err := evaluateRule(subRule, jsonObject)
+			result, err := EvaluateRule(subRule, data)
 			if result && err == nil {
 				return true, nil
 			}
@@ -89,7 +80,7 @@ func evaluateLogic(rule Rule, jsonObject map[string]interface{}) (bool, error) {
 		if len(rule.Rules) != 1 {
 			return false, fmt.Errorf("NOT logic must have exactly one sub-rule")
 		}
-		result, err := evaluateRule(rule.Rules[0], jsonObject)
+		result, err := EvaluateRule(rule.Rules[0], data)
 		return !result, err
 	default:
 		return false, fmt.Errorf("unsupported logic operator: %s", rule.Logic)

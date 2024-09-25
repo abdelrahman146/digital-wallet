@@ -103,9 +103,10 @@ should 0.
 - [x] Transactions / Exchange / Points Expiry
 - [x] Audit and Integrity Check
 - [x] Triggers
-- [ ] Programs
+- [x] Programs
 - [ ] User API
-- [ ] Tests
+- [x] Tests
+- [ ] reverse a transaction by providing some metadata value to match which transaction to reverse.
 
 ## To Generate Mocks 
 ```

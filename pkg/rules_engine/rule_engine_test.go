@@ -1,12 +1,15 @@
 package rule_engine
 
 import (
+	"encoding/json"
 	"testing"
 )
 
 // Utility function to make it easier to handle test cases
-func testEvaluate(t *testing.T, rule Rule, data string, expected bool) {
-	result, err := Evaluate(rule, []byte(data))
+func testEvaluateRule(t *testing.T, rule Rule, dataJson string, expected bool) {
+	var data map[string]interface{}
+	json.Unmarshal([]byte(dataJson), &data)
+	result, err := EvaluateRule(rule, data)
 	if err != nil {
 		t.Fatalf("Evaluation failed with error: %v", err)
 	}
@@ -23,10 +26,10 @@ func TestEvaluateSimpleStringEquality(t *testing.T) {
 	}
 
 	data := `{"name": "John"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"name": "Doe"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateStringContains(t *testing.T) {
@@ -37,10 +40,10 @@ func TestEvaluateStringContains(t *testing.T) {
 	}
 
 	data := `{"description": "Hello world"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"description": "Hello everyone"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateStringIn(t *testing.T) {
@@ -51,10 +54,10 @@ func TestEvaluateStringIn(t *testing.T) {
 	}
 
 	data := `{"status": "approved"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"status": "archived"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateStringNotIn(t *testing.T) {
@@ -65,10 +68,10 @@ func TestEvaluateStringNotIn(t *testing.T) {
 	}
 
 	data := `{"status": "archived"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"status": "approved"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateStringMatches(t *testing.T) {
@@ -79,10 +82,10 @@ func TestEvaluateStringMatches(t *testing.T) {
 	}
 
 	data := `{"email": "test@example.com"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"email": "invalid-email"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateNumericGreaterThan(t *testing.T) {
@@ -93,10 +96,10 @@ func TestEvaluateNumericGreaterThan(t *testing.T) {
 	}
 
 	data := `{"age": 20}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"age": 15}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateDateBefore(t *testing.T) {
@@ -107,10 +110,10 @@ func TestEvaluateDateBefore(t *testing.T) {
 	}
 
 	data := `{"birthdate": "1995-05-12"}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"birthdate": "2005-01-01"}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateAndLogic(t *testing.T) {
@@ -131,13 +134,13 @@ func TestEvaluateAndLogic(t *testing.T) {
 	}
 
 	data := `{"name": "John", "age": 25}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"name": "Doe", "age": 25}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 
 	data = `{"name": "John", "age": 15}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateOrLogic(t *testing.T) {
@@ -158,13 +161,13 @@ func TestEvaluateOrLogic(t *testing.T) {
 	}
 
 	data := `{"name": "John", "age": 15}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"name": "Doe", "age": 25}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"name": "Doe", "age": 15}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateNotLogic(t *testing.T) {
@@ -180,10 +183,10 @@ func TestEvaluateNotLogic(t *testing.T) {
 	}
 
 	data := `{"age": 20}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 
 	data = `{"age": 15}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 }
 
 func TestEvaluateNestedFields(t *testing.T) {
@@ -194,10 +197,10 @@ func TestEvaluateNestedFields(t *testing.T) {
 	}
 
 	data := `{"address": {"city": "New York"}}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"address": {"city": "Los Angeles"}}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateArrayAny(t *testing.T) {
@@ -214,10 +217,10 @@ func TestEvaluateArrayAny(t *testing.T) {
 	}
 
 	data := `{"family": [{"name": "John", "age": 15}, {"name": "Jane", "age": 25}]}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"family": [{"name": "John", "age": 15}, {"name": "Jane", "age": 17}]}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateArrayAll(t *testing.T) {
@@ -234,10 +237,10 @@ func TestEvaluateArrayAll(t *testing.T) {
 	}
 
 	data := `{"family": [{"name": "John", "age": 25}, {"name": "Jane", "age": 30}]}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	data = `{"family": [{"name": "John", "age": 25}, {"name": "Jane", "age": 17}]}`
-	testEvaluate(t, rule, data, false)
+	testEvaluateRule(t, rule, data, false)
 }
 
 func TestEvaluateArrayMultipleRulesAny(t *testing.T) {
@@ -259,13 +262,13 @@ func TestEvaluateArrayMultipleRulesAny(t *testing.T) {
 	}
 
 	data := `{"family": [{"name": "John", "age": 15}, {"name": "Jane", "age": 25}]}`
-	testEvaluate(t, rule, data, true) // One rule (name == "John") is satisfied
+	testEvaluateRule(t, rule, data, true) // One rule (name == "John") is satisfied
 
 	data = `{"family": [{"name": "John", "age": 15}, {"name": "Jane", "age": 17}]}`
-	testEvaluate(t, rule, data, true) // One rule (name == "John") is satisfied
+	testEvaluateRule(t, rule, data, true) // One rule (name == "John") is satisfied
 
 	data = `{"family": [{"name": "Doe", "age": 15}, {"name": "Jane", "age": 17}]}`
-	testEvaluate(t, rule, data, false) // No rule is satisfied
+	testEvaluateRule(t, rule, data, false) // No rule is satisfied
 }
 
 func TestEvaluateArrayMultipleRulesAll(t *testing.T) {
@@ -287,10 +290,10 @@ func TestEvaluateArrayMultipleRulesAll(t *testing.T) {
 	}
 
 	data := `{"family": [{"name": "John", "age": 25}, {"name": "John", "age": 30}]}`
-	testEvaluate(t, rule, data, true) // All elements satisfy all rules
+	testEvaluateRule(t, rule, data, true) // All elements satisfy all rules
 
 	data = `{"family": [{"name": "John", "age": 25}, {"name": "Jane", "age": 30}]}`
-	testEvaluate(t, rule, data, false) // Second element fails the "name == John" rule
+	testEvaluateRule(t, rule, data, false) // Second element fails the "name == John" rule
 }
 
 func TestComplexRuleWithAndOrNot(t *testing.T) {
@@ -339,7 +342,7 @@ func TestComplexRuleWithAndOrNot(t *testing.T) {
 			"location": "California"
 		}
 	}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	// Data that fails the NOT rule
 	data = `{
@@ -350,7 +353,7 @@ func TestComplexRuleWithAndOrNot(t *testing.T) {
 			"location": "New York"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Should fail due to NOT on "location == New York"
+	testEvaluateRule(t, rule, data, false) // Should fail due to NOT on "location == New York"
 
 	// Data that fails the OR condition
 	data = `{
@@ -361,7 +364,7 @@ func TestComplexRuleWithAndOrNot(t *testing.T) {
 			"location": "California"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Fails OR (age <= 30 and occupation not in "engineer,doctor,teacher")
+	testEvaluateRule(t, rule, data, false) // Fails OR (age <= 30 and occupation not in "engineer,doctor,teacher")
 
 	// Data that fails the AND condition
 	data = `{
@@ -372,7 +375,7 @@ func TestComplexRuleWithAndOrNot(t *testing.T) {
 			"location": "California"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Fails because "name" is not "John"
+	testEvaluateRule(t, rule, data, false) // Fails because "name" is not "John"
 }
 
 func TestArrayHandlingWithMultipleNestedRules(t *testing.T) {
@@ -411,7 +414,7 @@ func TestArrayHandlingWithMultipleNestedRules(t *testing.T) {
 			{"name": "Jake", "age": 19, "relationship": "sibling"}
 		]
 	}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	// Data where one family member fails the "relationship in" rule
 	data = `{
@@ -421,7 +424,7 @@ func TestArrayHandlingWithMultipleNestedRules(t *testing.T) {
 			{"name": "Jake", "age": 19, "relationship": "cousin"}
 		]
 	}`
-	testEvaluate(t, rule, data, false) // Fails because "cousin" is not in "father,mother,sibling"
+	testEvaluateRule(t, rule, data, false) // Fails because "cousin" is not in "father,mother,sibling"
 
 	// Data where one family member fails the regex match for name
 	data = `{
@@ -431,7 +434,7 @@ func TestArrayHandlingWithMultipleNestedRules(t *testing.T) {
 			{"name": "Jake123", "age": 19, "relationship": "sibling"}
 		]
 	}`
-	testEvaluate(t, rule, data, false) // Fails because "Jake123" doesn't match the regex
+	testEvaluateRule(t, rule, data, false) // Fails because "Jake123" doesn't match the regex
 
 	// Data where one family member fails the age rule
 	data = `{
@@ -441,7 +444,7 @@ func TestArrayHandlingWithMultipleNestedRules(t *testing.T) {
 			{"name": "Jake", "age": 19, "relationship": "sibling"}
 		]
 	}`
-	testEvaluate(t, rule, data, false) // Fails because Jane is 16 (< 18)
+	testEvaluateRule(t, rule, data, false) // Fails because Jane is 16 (< 18)
 }
 
 func TestComplexDateAndStringOperations(t *testing.T) {
@@ -474,7 +477,7 @@ func TestComplexDateAndStringOperations(t *testing.T) {
 			"status": "active"
 		}
 	}`
-	testEvaluate(t, rule, data, true)
+	testEvaluateRule(t, rule, data, true)
 
 	// Data that fails the "before" date rule
 	data = `{
@@ -484,7 +487,7 @@ func TestComplexDateAndStringOperations(t *testing.T) {
 			"status": "active"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Fails date rule
+	testEvaluateRule(t, rule, data, false) // Fails date rule
 
 	// Data that fails the email regex match
 	data = `{
@@ -494,7 +497,7 @@ func TestComplexDateAndStringOperations(t *testing.T) {
 			"status": "active"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Fails email regex
+	testEvaluateRule(t, rule, data, false) // Fails email regex
 
 	// Data that fails the "in" rule for status
 	data = `{
@@ -504,5 +507,5 @@ func TestComplexDateAndStringOperations(t *testing.T) {
 			"status": "suspended"
 		}
 	}`
-	testEvaluate(t, rule, data, false) // Fails "status in" rule
+	testEvaluateRule(t, rule, data, false) // Fails "status in" rule
 }
