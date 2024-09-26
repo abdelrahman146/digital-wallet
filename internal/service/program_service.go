@@ -169,7 +169,3 @@ func (s *programService) InvokePrograms(ctx context.Context, triggerSlug string,
 	}
 	return nil
 }
-
-func (s *programService) applyAffect(ctx context.Context, program *model.Program, data map[string]interface{}) error {
-	switch
-}
