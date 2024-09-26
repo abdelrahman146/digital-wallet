@@ -86,6 +86,20 @@ func (mr *MockProgramServiceMockRecorder) GetProgram(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProgram", reflect.TypeOf((*MockProgramService)(nil).GetProgram), ctx, id)
 }
 
+// InvokePrograms mocks base method.
+func (m *MockProgramService) InvokePrograms(ctx context.Context, triggerSlug, userId string, triggerData map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InvokePrograms", ctx, triggerSlug, userId, triggerData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InvokePrograms indicates an expected call of InvokePrograms.
+func (mr *MockProgramServiceMockRecorder) InvokePrograms(ctx, triggerSlug, userId, triggerData any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InvokePrograms", reflect.TypeOf((*MockProgramService)(nil).InvokePrograms), ctx, triggerSlug, userId, triggerData)
+}
+
 // ListPrograms mocks base method.
 func (m *MockProgramService) ListPrograms(ctx context.Context, page, limit int) (*api.List[model.Program], error) {
 	m.ctrl.T.Helper()
